@@ -9,7 +9,6 @@ add_library(
 	sqlw
 	SHARED
 		vendor/sqlite/sqlite3.c
-		src/sqlite3.cpp
 		src/connection.cpp
 		src/statement.cpp
 		src/status.cpp
