@@ -2,7 +2,6 @@
 #define SQLW_STATEMENT_H_
 
 #include "sqlw/concepts.hpp"
-#include "sqlw/sqlite3.hpp"
 #include "sqlw/forward.hpp"
 #include "sqlw/connection.hpp"
 #include "sqlite3.h"

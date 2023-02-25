@@ -2,7 +2,6 @@
 #define SQLW_STATUS_H_
 
 #include "sqlw/forward.hpp"
-#include "sqlw/sqlite3.hpp"
 #include "sqlw/statement.hpp"
 #include <string_view>
 
@@ -77,21 +76,23 @@ namespace sqlw::status
 				return "UNKNOWN";
 		}
 	}
-	constexpr auto view(const Sqlite3& db) -> std::string_view
-	{
-		return view(db.status());
-	}
+
+	/* constexpr auto view(const Sqlite3& db) -> std::string_view */
+	/* { */
+	/* 	return view(db.status()); */
+	/* } */
+
 	constexpr auto view(const Statement& stmt) -> std::string_view
 	{
 		return view(stmt.status());
 	}
 
 	auto verbose(const Code) -> std::string;
-	auto verbose(const Sqlite3&) -> std::string;
+	/* auto verbose(const Sqlite3&) -> std::string; */
 	auto verbose(const Statement&) -> std::string;
 
 	auto is_ok(const Code) -> bool;
-	auto is_ok(const Sqlite3&) -> bool;
+	/* auto is_ok(const Sqlite3&) -> bool; */
 	auto is_ok(const Statement&) -> bool;
 }
 

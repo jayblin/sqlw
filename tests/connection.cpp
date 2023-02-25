@@ -1,6 +1,5 @@
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
-#include "sqlw/sqlite3.hpp"
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
