@@ -66,25 +66,25 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_custom_target(tests)
+add_custom_target(sqlw_tests)
 
 add_executable(
-	sqlw_tests
+	sqlw_tests_executable
 	tests/status.cpp
 	tests/connection.cpp
 	tests/statement.cpp
 	tests/json_string_result.cpp
 )
 
-add_dependencies(tests sqlw_tests)
+add_dependencies(sqlw_tests sqlw_tests_executable)
 
 target_link_libraries(
-	sqlw_tests
+	sqlw_tests_executable
 	PRIVATE GTest::gtest_main sqlw
 )
 
 include(GoogleTest)
 
-gtest_discover_tests(sqlw_tests)
+gtest_discover_tests(sqlw_tests_executable)
 
 # ~TESTS
