@@ -3,11 +3,6 @@
 #include <sstream>
 #include <string_view>
 
-std::string sqlw::status::verbose(const sqlw::Statement& stmt)
-{
-	return verbose(stmt.status());
-}
-
 std::string sqlw::status::verbose(const sqlw::status::Code code)
 {
 	std::stringstream ss;
@@ -19,11 +14,6 @@ std::string sqlw::status::verbose(const sqlw::status::Code code)
 	return ss.str();
 }
 
-
-bool sqlw::status::is_ok(const Statement& stmt)
-{
-	return is_ok(stmt.status());
-}
 
 bool sqlw::status::is_ok(const status::Code code)
 {

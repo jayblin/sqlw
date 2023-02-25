@@ -15,9 +15,6 @@ namespace sqlw
 		SQL_TEXT = SQLITE_TEXT,
 	};
 
-	class Statement;
-	class Sqlite3;
-
 	namespace status
 	{
 		/**
@@ -237,10 +234,6 @@ namespace sqlw
 			IOERR_CORRUPTFS = 8458,
 			_CLOSED_ = 9999,
 		};
-
-		auto verbose(const Code) -> std::string;
-		auto verbose(const Sqlite3&) -> std::string;
-		auto verbose(const Statement&) -> std::string;
 	}
 }
 
