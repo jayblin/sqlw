@@ -13,8 +13,7 @@ std::string sqlw::status::verbose(const sqlw::status::Code code)
 	std::stringstream ss;
 
 	ss << '(' << static_cast<int>(code) << ") "
-		<< sqlw::status::view(code) << ": "
-		<< _verbose(code)
+		<< sqlite3_errstr(static_cast<int>(code))
 	;
 
 	return ss.str();

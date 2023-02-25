@@ -70,6 +70,7 @@ add_custom_target(tests)
 
 add_executable(
 	sqlw_tests
+	tests/status.cpp
 	tests/connection.cpp
 	tests/statement.cpp
 	tests/json_string_result.cpp
