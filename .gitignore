@@ -1,4 +1,4 @@
 build
 .cache
 compile_commands.json
-include/local/cmake_vars.h.in
+include/local/cmake_vars.h
