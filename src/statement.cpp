@@ -64,14 +64,7 @@ sqlw::Statement& sqlw::Statement::exec()
 }
 
 sqlw::Statement& sqlw::Statement::exec(
-	std::function<
-		void (
-			int column_count,
-			std::string_view column_name,
-			sqlw::Type column_type,
-			std::string_view column_value
-		)
-	> callback
+	std::function<void (ExecArgs)> callback
 )
 {
 	exec();
@@ -91,12 +84,12 @@ sqlw::Statement& sqlw::Statement::exec(
 	for (auto i = 0; i < col_count; i++)
 	{
 		const auto t = static_cast<sqlw::Type>(sqlite3_column_type(m_stmt, i));
-		callback(
+		callback({
 			col_count,
 			sqlite3_column_name(m_stmt, i),
 			t,
 			column_value(t, i)
-		);
+		});
 	}
 
 	return *this;
@@ -104,14 +97,7 @@ sqlw::Statement& sqlw::Statement::exec(
 
 
 sqlw::Statement& sqlw::Statement::exec_until_done(
-	std::function<
-		void (
-			int column_count,
-			std::string_view column_name,
-			sqlw::Type column_type,
-			std::string_view column_value
-		)
-	> callback
+	std::function<void (sqlw::Statement::ExecArgs)> callback
 )
 {
 	int _i = 0;
@@ -125,6 +111,7 @@ sqlw::Statement& sqlw::Statement::exec_until_done(
 			break;
 		}
 	}
+	/** @todo maybe let user decide maximum iteration count via compile flag?*/
 	while (status::Code::ROW == m_status  && _i < 256);
 
 	return *this;

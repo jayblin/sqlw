@@ -1,4 +1,5 @@
 #include "sqlw/statement.hpp"
+#include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
 #include "sqlw/status.hpp"
 #include <gtest/gtest.h>
@@ -44,6 +45,46 @@ TEST(Statement, can_execute_statements)
 	{
 		sqlw::Statement stmt {
 			&con,
+			"SELECT * FROM user WHERE id <> 1"
+		};
+
+		ASSERT_EQ(sqlw::status::Code::OK, stmt.status());
+
+		std::stringstream ss;
+		int i = 0;
+
+		auto callback = [&i, &ss](sqlw::Statement::ExecArgs args)
+		{
+			i++;
+
+			ss << args.column_name << ":" << args.column_value;
+
+			if (i == args.column_count)
+			{
+				ss << '\n';
+				i = 0;
+			}
+			else if (i < args.column_count)
+			{
+				ss << ',';
+			}
+		};
+
+		stmt.exec(callback);
+
+		ASSERT_PRED2(
+			[] (std::string expected, std::string actual)
+			{
+				return expected == actual;
+			},
+			"id:2,name:eris\n",
+			ss.str()
+		);
+	}
+
+	{
+		sqlw::Statement stmt {
+			&con,
 			"SELECT * FROM user"
 		};
 
@@ -52,23 +93,18 @@ TEST(Statement, can_execute_statements)
 		std::stringstream ss;
 		int i = 0;
 
-		auto callback = [&i, &ss](
-			int column_count,
-			std::string_view column_name,
-			sqlw::Type column_type,
-			std::string_view column_value
-		)
+		auto callback = [&i, &ss](sqlw::Statement::ExecArgs args)
 		{
 			i++;
 
-			ss << column_name << ":" << column_value;
+			ss << args.column_name << ":" << args.column_value;
 
-			if (i == column_count)
+			if (i == args.column_count)
 			{
 				ss << '\n';
 				i = 0;
 			}
-			else if (i < column_count)
+			else if (i < args.column_count)
 			{
 				ss << ',';
 			}

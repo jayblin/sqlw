@@ -17,6 +17,14 @@ namespace sqlw
 	class Statement
 	{
 	public:
+		struct ExecArgs
+		{
+			int column_count;
+			std::string_view column_name;
+			sqlw::Type column_type;
+			std::string_view column_value;
+		};
+
 		Statement(Connection* connection, std::string_view sql);
 
 		~Statement();
@@ -43,27 +51,9 @@ namespace sqlw
 		 */
 		auto exec() -> Statement&;
 
-		auto exec(
-			std::function<
-				void (
-					int column_count,
-					std::string_view column_name,
-					sqlw::Type column_type,
-					std::string_view column_value
-				)
-			>
-		) -> Statement&;
+		auto exec(std::function<void (ExecArgs)>) -> Statement&;
 
-		auto exec_until_done(
-			std::function<
-				void (
-					int column_count,
-					std::string_view column_name,
-					sqlw::Type column_type,
-					std::string_view column_value
-				)
-			>
-		) -> Statement&;
+		auto exec_until_done(std::function<void (ExecArgs)>) -> Statement&;
 
 		/**
 		 * Executes statement and returns an object of `T`, that must be able to
