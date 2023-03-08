@@ -5,6 +5,14 @@ project(sqlw VERSION 0.0.1 LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+	set(SQLW_STANDALONE TRUE)
+endif()
+
+option(SQLW_BUILD_TESTS "Build test programs" ${SQLW_STANDALONE})
+
+set(SQLW_EXEC_LIMIT 256 CACHE STRING "Default limit for consecutive queries and for SELECT results" FORCE)
+
 add_library(
 	sqlw
 	SHARED
@@ -44,16 +52,22 @@ target_compile_options(
 include(FetchContent)
 
 FetchContent_Declare(
-	cmake_vars
-	GIT_REPOSITORY 	https://github.com/jayblin/cmake_vars.git
-	GIT_TAG 		bc4f8fc951f42ebd15ccd0ddbad963969643fb26
+	GSL
+	GIT_REPOSITORY https://github.com/microsoft/GSL.git
+	GIT_TAG v4.0.0
+	GIT_SHALLOW ON
 )
 
-FetchContent_MakeAvailable(cmake_vars)
+FetchContent_MakeAvailable(GSL)
+
+target_link_libraries(
+	sqlw
+	PRIVATE Microsoft.GSL::GSL
+)
 
 # TESTS
-# https://google.github.io/googletest/quickstart-cmake.html
 
+# https://google.github.io/googletest/quickstart-cmake.html
 FetchContent_Declare(
 	googletest
 	GIT_REPOSITORY https://github.com/google/googletest.git
@@ -62,6 +76,7 @@ FetchContent_Declare(
 
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
@@ -80,7 +95,7 @@ add_dependencies(sqlw_tests sqlw_tests_executable)
 
 target_link_libraries(
 	sqlw_tests_executable
-	PRIVATE GTest::gtest_main sqlw
+	PRIVATE GTest::gtest_main Microsoft.GSL::GSL sqlw
 )
 
 include(GoogleTest)
