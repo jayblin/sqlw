@@ -6,11 +6,15 @@
 #include "sqlw/connection.hpp"
 #include "sqlite3.h"
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <iostream>
+#include <span>
+#include "local/cmake_vars.h"
+#include "gsl/pointers"
 
 namespace sqlw
 {
@@ -25,7 +29,7 @@ namespace sqlw
 			std::string_view column_value;
 		};
 
-		Statement(Connection* connection, std::string_view sql);
+		Statement(Connection* connection);
 
 		~Statement();
 
@@ -53,7 +57,7 @@ namespace sqlw
 
 		auto exec(std::function<void (ExecArgs)>) -> Statement&;
 
-		auto exec_until_done(std::function<void (ExecArgs)>) -> Statement&;
+		auto prepare(std::string_view sql) -> void;
 
 		/**
 		 * Executes statement and returns an object of `T`, that must be able to
@@ -62,27 +66,37 @@ namespace sqlw
 		 */
 		template <class T>
 			requires can_be_used_by_statement<T>
-		auto exec() -> T;
+		auto operator()(std::string_view sql) -> T;
+
+		auto operator()(std::string_view sql) -> void;
+
+		auto operator()(
+			std::string_view sql,
+			std::function<void (ExecArgs)> callback
+		) -> void;
 
 		constexpr auto status() const -> status::Code { return m_status; }
 
 	private:
-		sqlite3_stmt* m_stmt {nullptr};
-		status::Code m_status {status::Code::OK};
-		Connection* m_connection {nullptr};
+		Connection* 				m_connection {nullptr};
+		gsl::owner<sqlite3_stmt*> 	m_stmt {nullptr};
+		status::Code 				m_status {status::Code::OK};
+		gsl::owner<const char*> 	m_unused_sql {nullptr};
 	};
 
 	template <class T>
 		requires can_be_used_by_statement<T>
-	T Statement::exec()
+	T Statement::operator()(std::string_view sql)
 	{
 		T obj;
+		size_t iter = 0;
 
-		int _i = 0;
+		prepare(sql);
+
 		do
 		{
-			++_i;
 			exec();
+			iter++;
 
 			const auto col_count = sqlite3_data_count(m_stmt);
 
@@ -95,7 +109,10 @@ namespace sqlw
 
 			for (auto i = 0; i < col_count; i++)
 			{
-				const auto t = static_cast<sqlw::Type>(sqlite3_column_type(m_stmt, i));
+				const auto t = static_cast<sqlw::Type>(
+					sqlite3_column_type(m_stmt, i)
+				);
+
 				obj.column(
 					sqlite3_column_name(m_stmt, i),
 					t,
@@ -103,7 +120,7 @@ namespace sqlw
 				);
 			}
 		}
-		while (status::Code::ROW == m_status  && _i < 256);
+		while (status::Code::ROW == m_status && iter < SQLW_EXEC_LIMIT);
 
 		return obj;
 	}

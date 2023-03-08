@@ -130,4 +130,6 @@ TEST(Status, can_report_readable_error)
 
 		std::cout << msg << '\n';
 	}
+
+	std::cout << "---END PRINTING POSSIBLE SQLITE ERROR CODES---\n";
 }

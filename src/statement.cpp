@@ -1,30 +1,18 @@
 #include "sqlw/statement.hpp"
+#include "local/cmake_vars.h"
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
+#include "sqlw/status.hpp"
 #include <functional>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <string_view>
+#include <numeric>
 
-/* sqlw::Statement::Statement() */
-/* {} */
-
-/* sqlw::Statement::Statement(const Sqlite3& db, const std::string& sql) */
-/* { */
-/* 	auto rc = sqlite3_prepare_v2( */
-/* 		db.m_db, sql.data(), sql.size(), &m_stmt, nullptr */
-/* 	); */
-	
-/* 	m_status = static_cast<status::Code>(rc); */
-/* } */
-
-sqlw::Statement::Statement(sqlw::Connection* con, std::string_view sql)
+sqlw::Statement::Statement(sqlw::Connection* con)
+	: m_connection(con)
 {
-	auto rc = sqlite3_prepare_v2(
-		con->handle(), sql.data(), sql.size(), &m_stmt, nullptr
-	);
-	
-	m_status = static_cast<status::Code>(rc);
 }
 
 sqlw::Statement::~Statement()
@@ -47,9 +35,11 @@ sqlw::Statement& sqlw::Statement::operator=(sqlw::Statement&& other) noexcept
 		m_status = other.m_status;
 		m_stmt = other.m_stmt;
 		m_connection = other.m_connection;
+		m_unused_sql = other.m_unused_sql;
 
 		other.m_stmt = nullptr;
 		other.m_connection = nullptr;
+		other.m_unused_sql = nullptr;
 	}
 
 	return *this;
@@ -95,26 +85,68 @@ sqlw::Statement& sqlw::Statement::exec(
 	return *this;
 }
 
-
-sqlw::Statement& sqlw::Statement::exec_until_done(
-	std::function<void (sqlw::Statement::ExecArgs)> callback
-)
+void sqlw::Statement::prepare(std::string_view sql)
 {
-	int _i = 0;
+	auto rc = sqlite3_prepare_v2(
+		m_connection->handle(),
+		sql.data(),
+		sql.size(),
+		&m_stmt,
+		&m_unused_sql
+	);
+	
+	m_status = static_cast<status::Code>(rc);
+}
+
+void sqlw::Statement::operator()(std::string_view sql)
+{
+	prepare(sql);
+
+	size_t iter = 0;
 	do
 	{
-		++_i;
-		exec(callback);
+		exec();
+		iter++;
 
-		if (status::Code::DONE == m_status)
+		std::string_view unused {m_unused_sql};
+
+		if (sqlw::status::Code::DONE == m_status && !unused.empty())
+		{
+			prepare(unused);
+		}
+		else if (sqlw::status::Code::ROW != m_status)
 		{
 			break;
 		}
 	}
-	/** @todo maybe let user decide maximum iteration count via compile flag?*/
-	while (status::Code::ROW == m_status  && _i < 256);
+	while (iter < SQLW_EXEC_LIMIT);
+}
 
-	return *this;
+void sqlw::Statement::operator()(
+	std::string_view sql,
+	std::function<void (sqlw::Statement::ExecArgs)> callback
+)
+{
+	prepare(sql);
+
+	size_t iter = 0;
+	do
+	{
+		exec(callback);
+		iter++;
+
+		std::string_view unused {m_unused_sql};
+
+		if (sqlw::status::Code::DONE == m_status && !unused.empty())
+		{
+			prepare(unused);
+		}
+		else if (sqlw::status::Code::ROW != m_status)
+		{
+			break;
+		}
+	}
+	while (iter < SQLW_EXEC_LIMIT);
 }
 
 // @todo Определять динамически, когда использовать SQLITE_TRANSIENT,

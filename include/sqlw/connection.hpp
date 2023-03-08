@@ -4,6 +4,7 @@
 #include "sqlw/forward.hpp"
 #include "sqlite3.h"
 #include <filesystem>
+#include <gsl/pointers>
 #include <string_view>
 #include <iostream>
 
@@ -28,7 +29,7 @@ namespace sqlw
 		auto status() const -> status::Code { return m_status; }
 
 	private:
-		sqlite3* m_handle;
+		gsl::owner<sqlite3*> m_handle;
 		status::Code m_status = status::Code::OK;
 	};
 }
