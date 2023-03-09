@@ -62,7 +62,7 @@ FetchContent_MakeAvailable(GSL)
 
 target_link_libraries(
 	sqlw
-	PRIVATE Microsoft.GSL::GSL
+	PUBLIC Microsoft.GSL::GSL
 )
 
 # TESTS
@@ -95,7 +95,7 @@ add_dependencies(sqlw_tests sqlw_tests_executable)
 
 target_link_libraries(
 	sqlw_tests_executable
-	PRIVATE GTest::gtest_main Microsoft.GSL::GSL sqlw
+	PRIVATE GTest::gtest_main sqlw
 )
 
 include(GoogleTest)
