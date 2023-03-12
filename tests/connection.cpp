@@ -1,10 +1,10 @@
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
+#include "sqlw/cmake_vars.h"
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
-#include "local/cmake_vars.h"
 
 TEST(Connection, can_create_new_db_file_on_ctor)
 {

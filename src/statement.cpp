@@ -1,5 +1,5 @@
 #include "sqlw/statement.hpp"
-#include "local/cmake_vars.h"
+#include "sqlw/cmake_vars.h"
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
 #include "sqlw/status.hpp"

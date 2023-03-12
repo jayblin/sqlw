@@ -30,8 +30,8 @@ target_include_directories(
 )
 
 configure_file(
-	${PROJECT_SOURCE_DIR}/include/local/cmake_vars.h.in
-	${PROJECT_SOURCE_DIR}/include/local/cmake_vars.h
+	${PROJECT_SOURCE_DIR}/include/sqlw/cmake_vars.h.in
+	${PROJECT_SOURCE_DIR}/include/sqlw/cmake_vars.h
 )
 
 set(gcc_like_cxx "$<COMPILE_LANG_AND_ID:CXX,ARMClang,AppleClang,Clang,GNU,LCC>")

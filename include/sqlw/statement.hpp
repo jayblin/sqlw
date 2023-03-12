@@ -4,6 +4,7 @@
 #include "sqlw/concepts.hpp"
 #include "sqlw/forward.hpp"
 #include "sqlw/connection.hpp"
+#include "sqlw/cmake_vars.h"
 #include "sqlite3.h"
 #include <functional>
 #include <initializer_list>
@@ -13,7 +14,6 @@
 #include <string_view>
 #include <iostream>
 #include <span>
-#include "local/cmake_vars.h"
 #include "gsl/pointers"
 
 namespace sqlw
