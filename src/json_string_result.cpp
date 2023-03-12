@@ -1,6 +1,6 @@
 #include "sqlw/json_string_result.hpp"
 #include "sqlw/forward.hpp"
-#include <utility>
+#include <algorithm>
 
 static bool is_numeric(const std::string_view& value)
 {
