@@ -5,6 +5,7 @@
 #include "sqlw/status.hpp"
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -45,19 +46,10 @@ sqlw::Statement& sqlw::Statement::operator=(sqlw::Statement&& other) noexcept
 	return *this;
 }
 
-sqlw::Statement& sqlw::Statement::exec()
+sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
 {
 	auto rc = sqlite3_step(m_stmt);
 	m_status = static_cast<status::Code>(rc);
-
-	return *this;
-}
-
-sqlw::Statement& sqlw::Statement::exec(
-	std::function<void (ExecArgs)> callback
-)
-{
-	exec();
 
 	const auto col_count = sqlite3_data_count(m_stmt);
 
@@ -74,18 +66,22 @@ sqlw::Statement& sqlw::Statement::exec(
 	for (auto i = 0; i < col_count; i++)
 	{
 		const auto t = static_cast<sqlw::Type>(sqlite3_column_type(m_stmt, i));
-		callback({
-			col_count,
-			sqlite3_column_name(m_stmt, i),
-			t,
-			column_value(t, i)
-		});
+
+		if (callback)
+		{
+			callback({
+				col_count,
+				sqlite3_column_name(m_stmt, i),
+				t,
+				column_value(t, i)
+			});
+		}
 	}
 
 	return *this;
 }
 
-void sqlw::Statement::prepare(std::string_view sql)
+sqlw::Statement& sqlw::Statement::prepare(std::string_view sql)
 {
 	auto rc = sqlite3_prepare_v2(
 		m_connection->handle(),
@@ -96,39 +92,12 @@ void sqlw::Statement::prepare(std::string_view sql)
 	);
 	
 	m_status = static_cast<status::Code>(rc);
+
+	return *this;
 }
 
-void sqlw::Statement::operator()(std::string_view sql)
+void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
 {
-	prepare(sql);
-
-	size_t iter = 0;
-	do
-	{
-		exec();
-		iter++;
-
-		std::string_view unused {m_unused_sql};
-
-		if (sqlw::status::Code::DONE == m_status && !unused.empty())
-		{
-			prepare(unused);
-		}
-		else if (sqlw::status::Code::ROW != m_status)
-		{
-			break;
-		}
-	}
-	while (iter < SQLW_EXEC_LIMIT);
-}
-
-void sqlw::Statement::operator()(
-	std::string_view sql,
-	std::function<void (sqlw::Statement::ExecArgs)> callback
-)
-{
-	prepare(sql);
-
 	size_t iter = 0;
 	do
 	{
@@ -149,9 +118,23 @@ void sqlw::Statement::operator()(
 	while (iter < SQLW_EXEC_LIMIT);
 }
 
+void sqlw::Statement::operator()(
+	std::string_view sql,
+	sqlw::Statement::callback_type callback
+)
+{
+	prepare(sql);
+
+	operator()(callback);
+}
+
 // @todo Определять динамически, когда использовать SQLITE_TRANSIENT,
 // а когда SQLITE_STATIC.
-sqlw::Statement& sqlw::Statement::bind(int idx, std::string_view value, sqlw::Type t)
+sqlw::Statement& sqlw::Statement::bind(
+	int idx,
+	std::string_view value,
+	sqlw::Type t
+)
 {
 	int rc = 0;
 

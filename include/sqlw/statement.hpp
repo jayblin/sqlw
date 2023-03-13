@@ -9,6 +9,7 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -29,6 +30,8 @@ namespace sqlw
 			std::string_view column_value;
 		};
 
+		using callback_type = std::function<void (ExecArgs)>;
+
 		Statement(Connection* connection);
 
 		~Statement();
@@ -47,32 +50,41 @@ namespace sqlw
 		/**
 		 * Binds a value to argument at position `idx`.
 		 */
-		auto bind(int idx, std::string_view value, Type t) -> Statement&;
+		auto bind(
+			int idx,
+			std::string_view value,
+			Type t = Type::SQL_TEXT
+		) -> Statement&;
+
+		auto prepare(std::string_view sql) -> Statement&;
 
 		/**
 		 * Executes the statement once.
 		 * Usefull for INSERT/UPDATE/DELETE.
 		 */
-		auto exec() -> Statement&;
-
-		auto exec(std::function<void (ExecArgs)>) -> Statement&;
-
-		auto prepare(std::string_view sql) -> void;
+		auto exec(callback_type callback = nullptr) -> Statement&;
 
 		/**
-		 * Executes statement and returns an object of `T`, that must be able to
+		 * Operator() executes statement and returns an object of `T`, that must be able to
 		 * handle data that is received from database.
 		 * Useful for SELECT.
 		 */
 		template <class T>
 			requires can_be_used_by_statement<T>
-		auto operator()(std::string_view sql) -> T;
+		auto operator()(callback_type callback = nullptr) -> T;
 
-		auto operator()(std::string_view sql) -> void;
+		template <class T>
+			requires can_be_used_by_statement<T>
+		auto operator()(
+			std::string_view sql,
+			callback_type callback = nullptr
+		) -> T;
+
+		auto operator()(callback_type callback = nullptr) -> void;
 
 		auto operator()(
 			std::string_view sql,
-			std::function<void (ExecArgs)> callback
+			callback_type callback = nullptr
 		) -> void;
 
 		constexpr auto status() const -> status::Code { return m_status; }
@@ -86,16 +98,14 @@ namespace sqlw
 
 	template <class T>
 		requires can_be_used_by_statement<T>
-	T Statement::operator()(std::string_view sql)
+	T Statement::operator()(Statement::callback_type callback)
 	{
 		T obj;
 		size_t iter = 0;
 
-		prepare(sql);
-
 		do
 		{
-			exec();
+			exec(callback);
 			iter++;
 
 			const auto col_count = sqlite3_data_count(m_stmt);
@@ -123,6 +133,18 @@ namespace sqlw
 		while (status::Code::ROW == m_status && iter < SQLW_EXEC_LIMIT);
 
 		return obj;
+	}
+
+	template <class T>
+		requires can_be_used_by_statement<T>
+	T Statement::operator()(
+		std::string_view sql,
+		Statement::callback_type callback
+	)
+	{
+		prepare(sql);
+
+		return operator()<T>(callback);
 	}
 }
 
