@@ -29,17 +29,14 @@ namespace sqlw
 
 		auto row(int column_count) -> void;
 
-		auto column(
-			std::string_view name,
-			Type type,
-			std::string_view value
-		) -> void;
+		auto column(std::string_view name, Type type, std::string_view value)
+		    -> void;
 
 		/**
 		 * Returns result as json array.
 		 */
 		auto get_array_result() -> std::string;
-		
+
 		/**
 		 * Returns result as json object.
 		 */
@@ -50,7 +47,7 @@ namespace sqlw
 	private:
 		std::stringstream m_stream;
 	};
-}
+} // namespace sqlw
 
 static_assert(sqlw::has_db_callback<sqlw::JsonStringResult>);
 static_assert(sqlw::can_be_used_by_statement<sqlw::JsonStringResult>);

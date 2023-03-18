@@ -1,21 +1,21 @@
 #ifndef SQLW_STATEMENT_H_
 #define SQLW_STATEMENT_H_
 
-#include "sqlw/concepts.hpp"
-#include "sqlw/forward.hpp"
-#include "sqlw/connection.hpp"
-#include "sqlw/cmake_vars.h"
+#include "gsl/pointers"
 #include "sqlite3.h"
+#include "sqlw/cmake_vars.h"
+#include "sqlw/concepts.hpp"
+#include "sqlw/connection.hpp"
+#include "sqlw/forward.hpp"
 #include <functional>
 #include <initializer_list>
+#include <iostream>
 #include <memory>
 #include <optional>
+#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
-#include <iostream>
-#include <span>
-#include "gsl/pointers"
 
 namespace sqlw
 {
@@ -30,7 +30,7 @@ namespace sqlw
 			std::string_view column_value;
 		};
 
-		using callback_type = std::function<void (ExecArgs)>;
+		using callback_type = std::function<void(ExecArgs)>;
 
 		Statement(Connection* connection);
 
@@ -50,11 +50,8 @@ namespace sqlw
 		/**
 		 * Binds a value to argument at position `idx`.
 		 */
-		auto bind(
-			int idx,
-			std::string_view value,
-			Type t = Type::SQL_TEXT
-		) -> Statement&;
+		auto bind(int idx, std::string_view value, Type t = Type::SQL_TEXT)
+		    -> Statement&;
 
 		auto prepare(std::string_view sql) -> Statement&;
 
@@ -65,39 +62,38 @@ namespace sqlw
 		auto exec(callback_type callback = nullptr) -> Statement&;
 
 		/**
-		 * Operator() executes statement and returns an object of `T`, that must be able to
-		 * handle data that is received from database.
-		 * Useful for SELECT.
+		 * Operator() executes statement and returns an object of `T`, that
+		 * must be able to handle data that is received from database. Useful
+		 * for SELECT.
 		 */
-		template <class T>
-			requires can_be_used_by_statement<T>
+		template<class T>
+		requires can_be_used_by_statement<T>
 		auto operator()(callback_type callback = nullptr) -> T;
 
-		template <class T>
-			requires can_be_used_by_statement<T>
-		auto operator()(
-			std::string_view sql,
-			callback_type callback = nullptr
-		) -> T;
+		template<class T>
+		requires can_be_used_by_statement<T>
+		auto operator()(std::string_view sql, callback_type callback = nullptr)
+		    -> T;
 
 		auto operator()(callback_type callback = nullptr) -> void;
 
-		auto operator()(
-			std::string_view sql,
-			callback_type callback = nullptr
-		) -> void;
+		auto operator()(std::string_view sql, callback_type callback = nullptr)
+		    -> void;
 
-		constexpr auto status() const -> status::Code { return m_status; }
+		constexpr auto status() const -> status::Code
+		{
+			return m_status;
+		}
 
 	private:
-		Connection* 				m_connection {nullptr};
-		gsl::owner<sqlite3_stmt*> 	m_stmt {nullptr};
-		status::Code 				m_status {status::Code::OK};
-		gsl::owner<const char*> 	m_unused_sql {nullptr};
+		Connection* m_connection {nullptr};
+		gsl::owner<sqlite3_stmt*> m_stmt {nullptr};
+		status::Code m_status {status::Code::OK};
+		gsl::owner<const char*> m_unused_sql {nullptr};
 	};
 
-	template <class T>
-		requires can_be_used_by_statement<T>
+	template<class T>
+	requires can_be_used_by_statement<T>
 	T Statement::operator()(Statement::callback_type callback)
 	{
 		T obj;
@@ -120,14 +116,10 @@ namespace sqlw
 			for (auto i = 0; i < col_count; i++)
 			{
 				const auto t = static_cast<sqlw::Type>(
-					sqlite3_column_type(m_stmt, i)
+				    sqlite3_column_type(m_stmt, i)
 				);
 
-				obj.column(
-					sqlite3_column_name(m_stmt, i),
-					t,
-					column_value(t, i)
-				);
+				obj.column(sqlite3_column_name(m_stmt, i), t, column_value(t, i));
 			}
 		}
 		while (status::Code::ROW == m_status && iter < SQLW_EXEC_LIMIT);
@@ -135,17 +127,17 @@ namespace sqlw
 		return obj;
 	}
 
-	template <class T>
-		requires can_be_used_by_statement<T>
+	template<class T>
+	requires can_be_used_by_statement<T>
 	T Statement::operator()(
-		std::string_view sql,
-		Statement::callback_type callback
+	    std::string_view sql,
+	    Statement::callback_type callback
 	)
 	{
 		prepare(sql);
 
 		return operator()<T>(callback);
 	}
-}
+} // namespace sqlw
 
 #endif // SQLW_STATEMENT_H_

@@ -8,12 +8,10 @@ std::string sqlw::status::verbose(const sqlw::status::Code code)
 	std::stringstream ss;
 
 	ss << '(' << static_cast<int>(code) << ") "
-		<< sqlite3_errstr(static_cast<int>(code))
-	;
+	   << sqlite3_errstr(static_cast<int>(code));
 
 	return ss.str();
 }
-
 
 bool sqlw::status::is_ok(const status::Code code)
 {
@@ -21,4 +19,3 @@ bool sqlw::status::is_ok(const status::Code code)
 
 	return code == C::OK || code == C::DONE || code == C::ROW;
 }
-

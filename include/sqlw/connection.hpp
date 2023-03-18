@@ -1,12 +1,12 @@
 #ifndef SQLW_CONNECTION_H_
 #define SQLW_CONNECTION_H_
 
-#include "sqlw/forward.hpp"
 #include "sqlite3.h"
+#include "sqlw/forward.hpp"
 #include <filesystem>
 #include <gsl/pointers>
-#include <string_view>
 #include <iostream>
+#include <string_view>
 
 namespace sqlw
 {
@@ -25,13 +25,21 @@ namespace sqlw
 		Connection& operator=(Connection&&) noexcept;
 
 		auto connect(std::string_view file_name) -> void;
-		auto handle() const -> sqlite3* { return m_handle; };
-		auto status() const -> status::Code { return m_status; }
+
+		auto handle() const -> sqlite3*
+		{
+			return m_handle;
+		}
+
+		auto status() const -> status::Code
+		{
+			return m_status;
+		}
 
 	private:
 		gsl::owner<sqlite3*> m_handle;
 		status::Code m_status = status::Code::OK;
 	};
-}
+} // namespace sqlw
 
 #endif // SQLW_CONNECTION_H_

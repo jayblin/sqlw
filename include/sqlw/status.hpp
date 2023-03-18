@@ -77,6 +77,6 @@ namespace sqlw::status
 	auto verbose(const Code) -> std::string;
 
 	auto is_ok(const Code) -> bool;
-}
+} // namespace sqlw::status
 
 #endif // SQLW_STATUS_H_

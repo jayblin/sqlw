@@ -234,7 +234,7 @@ namespace sqlw
 			IOERR_CORRUPTFS = 8458,
 			_CLOSED_ = 9999,
 		};
-	}
-}
+	} // namespace status
+} // namespace sqlw
 
 #endif // SQLW_FORWARD_H_

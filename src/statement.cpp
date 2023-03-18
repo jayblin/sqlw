@@ -5,16 +5,15 @@
 #include "sqlw/status.hpp"
 #include <functional>
 #include <iostream>
+#include <numeric>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
-#include <numeric>
 
-sqlw::Statement::Statement(sqlw::Connection* con)
-	: m_connection(con)
-{
-}
+sqlw::Statement::Statement(sqlw::Connection* con) :
+    m_connection(con)
+{}
 
 sqlw::Statement::~Statement()
 {
@@ -69,28 +68,40 @@ sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
 
 		if (callback)
 		{
-			callback({
-				col_count,
-				sqlite3_column_name(m_stmt, i),
-				t,
-				column_value(t, i)
-			});
+			callback(
+			    {col_count, sqlite3_column_name(m_stmt, i), t, column_value(t, i)}
+			);
 		}
 	}
 
 	return *this;
 }
 
+auto superlongandexplicitfunctionname(
+    int a,
+    int b,
+    int c,
+    int d,
+    int e,
+    int f,
+    int g,
+    int h,
+    int i
+) -> int
+{
+	return 0;
+}
+
 sqlw::Statement& sqlw::Statement::prepare(std::string_view sql)
 {
 	auto rc = sqlite3_prepare_v2(
-		m_connection->handle(),
-		sql.data(),
-		sql.size(),
-		&m_stmt,
-		&m_unused_sql
+	    m_connection->handle(),
+	    sql.data(),
+	    sql.size(),
+	    &m_stmt,
+	    &m_unused_sql
 	);
-	
+
 	m_status = static_cast<status::Code>(rc);
 
 	return *this;
@@ -119,8 +130,8 @@ void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
 }
 
 void sqlw::Statement::operator()(
-	std::string_view sql,
-	sqlw::Statement::callback_type callback
+    std::string_view sql,
+    sqlw::Statement::callback_type callback
 )
 {
 	prepare(sql);
@@ -131,9 +142,9 @@ void sqlw::Statement::operator()(
 // @todo Определять динамически, когда использовать SQLITE_TRANSIENT,
 // а когда SQLITE_STATIC.
 sqlw::Statement& sqlw::Statement::bind(
-	int idx,
-	std::string_view value,
-	sqlw::Type t
+    int idx,
+    std::string_view value,
+    sqlw::Type t
 )
 {
 	int rc = 0;
@@ -142,7 +153,11 @@ sqlw::Statement& sqlw::Statement::bind(
 	{
 		case sqlw::Type::SQL_TEXT:
 			rc = sqlite3_bind_text(
-				m_stmt, idx, value.data(), value.size(), SQLITE_TRANSIENT
+			    m_stmt,
+			    idx,
+			    value.data(),
+			    value.size(),
+			    SQLITE_TRANSIENT
 			);
 			break;
 		case sqlw::Type::SQL_DOUBLE:
@@ -150,7 +165,11 @@ sqlw::Statement& sqlw::Statement::bind(
 			break;
 		case sqlw::Type::SQL_BLOB:
 			rc = sqlite3_bind_blob(
-				m_stmt, idx, value.data(), value.size(), SQLITE_TRANSIENT
+			    m_stmt,
+			    idx,
+			    value.data(),
+			    value.size(),
+			    SQLITE_TRANSIENT
 			);
 			break;
 		case sqlw::Type::SQL_INT:
@@ -170,34 +189,42 @@ std::string sqlw::Statement::column_value(sqlw::Type type, int column_idx)
 {
 	switch (type)
 	{
-		case sqlw::Type::SQL_INT: {
-			std::ostringstream ss;
+		case sqlw::Type::SQL_INT:
+			{
+				std::ostringstream ss;
 
-			ss << sqlite3_column_int(m_stmt, column_idx);
+				ss << sqlite3_column_int(m_stmt, column_idx);
 
-			return ss.str();
-		}
-		case sqlw::Type::SQL_DOUBLE: {
-			std::ostringstream ss;
+				return ss.str();
+			}
+		case sqlw::Type::SQL_DOUBLE:
+			{
+				std::ostringstream ss;
 
-			ss << sqlite3_column_double(m_stmt, column_idx);
+				ss << sqlite3_column_double(m_stmt, column_idx);
 
-			return ss.str();
-	   }
-		case sqlw::Type::SQL_TEXT: {
-			const std::string::size_type size = sqlite3_column_bytes(m_stmt, column_idx);
-			return {
-				reinterpret_cast<const char*>(sqlite3_column_text(m_stmt, column_idx)),
-				size
-			};
-		}
-		case sqlw::Type::SQL_BLOB: {
-			const std::string::size_type size = sqlite3_column_bytes(m_stmt, column_idx);
-			return {
-				static_cast<const char*>(sqlite3_column_blob(m_stmt, column_idx)),
-				size
-			};
-		}
+				return ss.str();
+			}
+		case sqlw::Type::SQL_TEXT:
+			{
+				const std::string::size_type size =
+				    sqlite3_column_bytes(m_stmt, column_idx);
+				return {
+				    reinterpret_cast<const char*>(
+				        sqlite3_column_text(m_stmt, column_idx)
+				    ),
+				    size};
+			}
+		case sqlw::Type::SQL_BLOB:
+			{
+				const std::string::size_type size =
+				    sqlite3_column_bytes(m_stmt, column_idx);
+				return {
+				    static_cast<const char*>(
+				        sqlite3_column_blob(m_stmt, column_idx)
+				    ),
+				    size};
+			}
 		case sqlw::Type::SQL_NULL:
 			return "";
 		default:

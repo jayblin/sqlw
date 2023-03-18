@@ -7,7 +7,10 @@ static bool is_numeric(const std::string_view& value)
 	const auto it = std::find_if(
 	    value.begin(),
 	    value.end(),
-	    [](char const& c) { return !std::isdigit(c) && c != '.'; }
+	    [](char const& c)
+	    {
+		    return !std::isdigit(c) && c != '.';
+	    }
 	);
 
 	return it == value.end();
@@ -20,18 +23,13 @@ static bool is_json_array(const std::string_view& value)
 
 static bool should_be_quoted(const std::string_view& value)
 {
-	return !(value.length() > 0
-		&& (is_numeric(value) || is_json_array(value)))
-	;
+	return !(value.length() > 0 && (is_numeric(value) || is_json_array(value)));
 }
 
 static void close_braces_if_needed(std::stringstream& stream)
 {
-	if (
-		stream.view().length() > 0
-		&& stream.view().starts_with('{')
-		&& !stream.view().ends_with('}')
-	)
+	if (stream.view().length() > 0 && stream.view().starts_with('{')
+	    && !stream.view().ends_with('}'))
 	{
 		stream << "}";
 	}
@@ -42,7 +40,9 @@ sqlw::JsonStringResult::JsonStringResult(sqlw::JsonStringResult&& other) noexcep
 	*this = std::move(other);
 }
 
-sqlw::JsonStringResult& sqlw::JsonStringResult::operator=(sqlw::JsonStringResult&& other) noexcept
+sqlw::JsonStringResult& sqlw::JsonStringResult::operator=(
+    sqlw::JsonStringResult&& other
+) noexcept
 {
 	if (this != &other)
 	{
@@ -136,9 +136,9 @@ void sqlw::JsonStringResult::row(int column_count)
 }
 
 void sqlw::JsonStringResult::column(
-	std::string_view name,
-	sqlw::Type type,
-	std::string_view value
+    std::string_view name,
+    sqlw::Type type,
+    std::string_view value
 )
 {
 	if (!m_stream.view().ends_with('{'))
