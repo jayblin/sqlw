@@ -11,63 +11,63 @@ namespace sqlw::status
 	{
 		switch (code)
 		{
-			case status::Code::OK:
+			case status::Code::SQLW_OK:
 				return "OK";
 			case status::Code::SQLW_ERROR:
 				return "ERROR";
-			case status::Code::INTERNAL:
+			case status::Code::SQLW_INTERNAL:
 				return "INTERNAL";
-			case status::Code::PERM:
+			case status::Code::SQLW_PERM:
 				return "PERM";
-			case status::Code::ABORT:
+			case status::Code::SQLW_ABORT:
 				return "ABORT";
-			case status::Code::BUSY:
+			case status::Code::SQLW_BUSY:
 				return "BUSY";
-			case status::Code::LOCKED:
+			case status::Code::SQLW_LOCKED:
 				return "LOCKED";
-			case status::Code::NOMEM:
+			case status::Code::SQLW_NOMEM:
 				return "NOMEM";
-			case status::Code::READONLY:
+			case status::Code::SQLW_READONLY:
 				return "READONLY";
-			case status::Code::INTERRUPT:
+			case status::Code::SQLW_INTERRUPT:
 				return "INTERRUPT";
-			case status::Code::IOERR:
+			case status::Code::SQLW_IOERR:
 				return "IOERR|ROW|DONE";
-			case status::Code::CORRUPT:
+			case status::Code::SQLW_CORRUPT:
 				return "CORRUPT";
-			case status::Code::NOTFOUND:
+			case status::Code::SQLW_NOTFOUND:
 				return "NOTFOUND";
-			case status::Code::FULL:
+			case status::Code::SQLW_FULL:
 				return "FULL";
-			case status::Code::CANTOPEN:
+			case status::Code::SQLW_CANTOPEN:
 				return "CANTOPEN";
-			case status::Code::PROTOCOL:
+			case status::Code::SQLW_PROTOCOL:
 				return "PROTOCOL";
-			case status::Code::EMPTY:
+			case status::Code::SQLW_EMPTY:
 				return "EMPTY";
-			case status::Code::SCHEMA:
+			case status::Code::SQLW_SCHEMA:
 				return "SCHEMA";
-			case status::Code::TOOBIG:
+			case status::Code::SQLW_TOOBIG:
 				return "TOOBIG";
-			case status::Code::CONSTRAINT:
+			case status::Code::SQLW_CONSTRAINT:
 				return "CONSTRAINT";
-			case status::Code::MISMATCH:
+			case status::Code::SQLW_MISMATCH:
 				return "MISMATCH";
-			case status::Code::MISUSE:
+			case status::Code::SQLW_MISUSE:
 				return "MISUSE";
-			case status::Code::NOLFS:
+			case status::Code::SQLW_NOLFS:
 				return "NOLFS";
-			case status::Code::AUTH:
+			case status::Code::SQLW_AUTH:
 				return "AUTH";
-			case status::Code::FORMAT:
+			case status::Code::SQLW_FORMAT:
 				return "FORMAT";
-			case status::Code::RANGE:
+			case status::Code::SQLW_RANGE:
 				return "RANGE";
-			case status::Code::NOTADB:
+			case status::Code::SQLW_NOTADB:
 				return "NOTADB";
-			case status::Code::NOTICE:
+			case status::Code::SQLW_NOTICE:
 				return "NOTICE";
-			case status::Code::WARNING:
+			case status::Code::SQLW_WARNING:
 				return "WARNING";
 			default:
 				return "UNKNOWN";

@@ -88,7 +88,7 @@ namespace sqlw
 	private:
 		Connection* m_connection {nullptr};
 		gsl::owner<sqlite3_stmt*> m_stmt {nullptr};
-		status::Code m_status {status::Code::OK};
+		status::Code m_status {status::Code::SQLW_OK};
 		gsl::owner<const char*> m_unused_sql {nullptr};
 	};
 
@@ -106,7 +106,7 @@ namespace sqlw
 
 			const auto col_count = sqlite3_data_count(m_stmt);
 
-			if (status::Code::DONE == m_status || 0 == col_count)
+			if (status::Code::SQLW_DONE == m_status || 0 == col_count)
 			{
 				break;
 			}
@@ -122,7 +122,7 @@ namespace sqlw
 				obj.column(sqlite3_column_name(m_stmt, i), t, column_value(t, i));
 			}
 		}
-		while (status::Code::ROW == m_status && iter < SQLW_EXEC_LIMIT);
+		while (status::Code::SQLW_ROW == m_status && iter < SQLW_EXEC_LIMIT);
 
 		return obj;
 	}

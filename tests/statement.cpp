@@ -10,7 +10,7 @@ TEST(Statement, can_execute_statements)
 	sqlw::Connection con {":memory:"};
 	sqlw::Statement stmt {&con};
 
-	ASSERT_EQ(sqlw::status::Code::OK, stmt.status())
+	ASSERT_EQ(sqlw::status::Code::SQLW_OK, stmt.status())
 	    << sqlw::status::verbose(stmt.status());
 
 	stmt(R"(CREATE TABLE user (
@@ -18,12 +18,12 @@ TEST(Statement, can_execute_statements)
 		name TEXT NOT NULL UNIQUE
 	);)");
 
-	ASSERT_EQ(sqlw::status::Code::DONE, stmt.status())
+	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
 	    << sqlw::status::verbose(stmt.status());
 
 	stmt("INSERT INTO user (id, name) VALUES (1,'kate'),(2,'eris');");
 
-	ASSERT_EQ(sqlw::status::Code::DONE, stmt.status())
+	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
 	    << sqlw::status::verbose(stmt.status());
 
 	{
@@ -62,7 +62,7 @@ TEST(Statement, can_execute_statements)
 	{
 		stmt("SELECT * FROM user");
 
-		ASSERT_EQ(sqlw::status::Code::DONE, stmt.status())
+		ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
 		    << sqlw::status::verbose(stmt.status());
 
 		std::stringstream ss;
@@ -111,7 +111,7 @@ TEST(Statement, can_execute_multiple_statements)
 	    "INSERT INTO user (id, name) VALUES (1,'zavala'),(2,'cade');"
 	);
 
-	ASSERT_EQ(sqlw::status::Code::DONE, stmt.status())
+	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
 	    << sqlw::status::verbose(stmt.status());
 
 	{
@@ -162,7 +162,7 @@ TEST(Statement, can_bind_parameters)
 	    "INSERT INTO user (id, name) VALUES (1,'drifter'),(2,'clovis');"
 	);
 
-	ASSERT_EQ(sqlw::status::Code::DONE, stmt.status())
+	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
 	    << sqlw::status::verbose(stmt.status());
 
 	{
@@ -175,7 +175,7 @@ TEST(Statement, can_bind_parameters)
 		    .bind(1, "clovis", sqlw::Type::SQL_TEXT)
 		    .bind(2, "1", sqlw::Type::SQL_INT);
 
-		ASSERT_EQ(sqlw::status::Code::OK, stmt.status())
+		ASSERT_EQ(sqlw::status::Code::SQLW_OK, stmt.status())
 		    << sqlw::status::verbose(stmt.status());
 
 		stmt(

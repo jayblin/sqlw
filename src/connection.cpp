@@ -39,7 +39,7 @@ void sqlw::Connection::connect(std::string_view file_name)
 
 	m_status = static_cast<status::Code>(rc);
 
-	if (m_status != sqlw::status::Code::OK)
+	if (m_status != sqlw::status::Code::SQLW_OK)
 	{
 		sqlite3_close(m_handle);
 	}

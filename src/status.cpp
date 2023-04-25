@@ -17,5 +17,5 @@ bool sqlw::status::is_ok(const status::Code code)
 {
 	using C = sqlw::status::Code;
 
-	return code == C::OK || code == C::DONE || code == C::ROW;
+	return code == C::SQLW_OK || code == C::SQLW_DONE || code == C::SQLW_ROW;
 }

@@ -54,10 +54,10 @@ sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
 
 	if (0 == col_count)
 	{
-		m_status = status::Code::DONE;
+		m_status = status::Code::SQLW_DONE;
 	}
 
-	if (status::Code::DONE == m_status)
+	if (status::Code::SQLW_DONE == m_status)
 	{
 		return *this;
 	}
@@ -102,11 +102,11 @@ void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
 
 		std::string_view unused {m_unused_sql};
 
-		if (sqlw::status::Code::DONE == m_status && !unused.empty())
+		if (sqlw::status::Code::SQLW_DONE == m_status && !unused.empty())
 		{
 			prepare(unused);
 		}
-		else if (sqlw::status::Code::ROW != m_status)
+		else if (sqlw::status::Code::SQLW_ROW != m_status)
 		{
 			break;
 		}

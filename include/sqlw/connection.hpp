@@ -38,7 +38,7 @@ namespace sqlw
 
 	private:
 		gsl::owner<sqlite3*> m_handle;
-		status::Code m_status = status::Code::OK;
+		status::Code m_status = status::Code::SQLW_OK;
 	};
 } // namespace sqlw
 
