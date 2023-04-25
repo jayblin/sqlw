@@ -77,21 +77,6 @@ sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
 	return *this;
 }
 
-auto superlongandexplicitfunctionname(
-    int a,
-    int b,
-    int c,
-    int d,
-    int e,
-    int f,
-    int g,
-    int h,
-    int i
-) -> int
-{
-	return 0;
-}
-
 sqlw::Statement& sqlw::Statement::prepare(std::string_view sql)
 {
 	auto rc = sqlite3_prepare_v2(

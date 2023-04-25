@@ -13,7 +13,7 @@ namespace sqlw::status
 		{
 			case status::Code::OK:
 				return "OK";
-			case status::Code::ERROR:
+			case status::Code::SQLW_ERROR:
 				return "ERROR";
 			case status::Code::INTERNAL:
 				return "INTERNAL";

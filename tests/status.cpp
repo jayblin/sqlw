@@ -18,7 +18,7 @@ TEST(Status, can_report_readable_error)
 
 	std::vector<sqlw::status::Code> codes = {
 	    sqlw::status::Code::OK,
-	    sqlw::status::Code::ERROR,
+	    sqlw::status::Code::SQLW_ERROR,
 	    sqlw::status::Code::INTERNAL,
 	    sqlw::status::Code::PERM,
 	    sqlw::status::Code::ABORT,

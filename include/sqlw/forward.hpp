@@ -25,7 +25,7 @@ namespace sqlw
 			/* not an error */
 			OK = 0,
 			/* SQL logic error */
-			ERROR = 1,
+			SQLW_ERROR = 1,
 			/* unknown error */
 			INTERNAL = 2,
 			/* access permission denied */
