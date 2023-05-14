@@ -17,10 +17,7 @@ sqlw::Statement::Statement(sqlw::Connection* con) :
 
 sqlw::Statement::~Statement()
 {
-	if (m_stmt)
-	{
-		sqlite3_finalize(m_stmt);
-	}
+	sqlite3_finalize(m_stmt);
 }
 
 sqlw::Statement::Statement(sqlw::Statement&& other) noexcept
@@ -49,6 +46,11 @@ sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
 {
 	auto rc = sqlite3_step(m_stmt);
 	m_status = static_cast<status::Code>(rc);
+
+	if (!sqlw::status::is_ok(m_status))
+	{
+		return *this;
+	}
 
 	const auto col_count = sqlite3_data_count(m_stmt);
 
@@ -104,6 +106,7 @@ void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
 
 		if (sqlw::status::Code::SQLW_DONE == m_status && !unused.empty())
 		{
+			sqlite3_finalize(m_stmt);
 			prepare(unused);
 		}
 		else if (sqlw::status::Code::SQLW_ROW != m_status)

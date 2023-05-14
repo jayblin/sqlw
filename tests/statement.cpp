@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include <sstream>
 
-TEST(Statement, can_execute_statements)
+GTEST_TEST(Statement, can_execute_statements)
 {
 	sqlw::Connection con {":memory:"};
 	sqlw::Statement stmt {&con};
@@ -98,7 +98,7 @@ TEST(Statement, can_execute_statements)
 	}
 }
 
-TEST(Statement, can_execute_multiple_statements)
+GTEST_TEST(Statement, can_execute_multiple_statements)
 {
 	sqlw::Connection con {":memory:"};
 	sqlw::Statement stmt {&con};
@@ -149,7 +149,7 @@ TEST(Statement, can_execute_multiple_statements)
 	}
 }
 
-TEST(Statement, can_bind_parameters)
+GTEST_TEST(Statement, can_bind_parameters)
 {
 	sqlw::Connection con {":memory:"};
 	sqlw::Statement stmt {&con};
@@ -206,4 +206,33 @@ TEST(Statement, can_bind_parameters)
 		    ss.str()
 		) << sqlw::status::verbose(stmt.status());
 	}
+}
+
+static void errorLogCallback(void *pArg, int iErrCode, const char *zMsg)
+{
+	std::cout << '[' << iErrCode << "] " << zMsg << '\n';
+}
+
+GTEST_TEST(Statement, does_report_misuse)
+{
+	sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, nullptr);
+
+	sqlw::Connection con {":memory:"};
+	sqlw::Statement stmt {&con};
+
+	ASSERT_EQ(sqlw::status::Code::SQLW_OK, stmt.status())
+	    << sqlw::status::verbose(stmt.status());
+
+	stmt(R"(CREATE TABLE user (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE
+	);)");
+
+	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
+	    << sqlw::status::verbose(stmt.status());
+
+	stmt("INSERT INTO user (id, name) VALUES (1,'kate'),(2,'eris'");
+
+	ASSERT_EQ(sqlw::status::Code::SQLW_MISUSE, stmt.status())
+	    << sqlw::status::verbose(stmt.status());
 }
