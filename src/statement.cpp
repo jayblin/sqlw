@@ -115,6 +115,7 @@ void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
 		}
 	}
 	while (iter < SQLW_EXEC_LIMIT);
+	m_unused_sql = nullptr;
 }
 
 void sqlw::Statement::operator()(
@@ -124,7 +125,10 @@ void sqlw::Statement::operator()(
 {
 	prepare(sql);
 
-	operator()(callback);
+	if (sqlw::status::Code::SQLW_OK == m_status)
+	{
+		operator()(callback);
+	}
 }
 
 // @todo Определять динамически, когда использовать SQLITE_TRANSIENT,
