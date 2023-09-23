@@ -1,7 +1,0 @@
-#ifndef SQLW_CMAKE_VARS_H_
-#define SQLW_CMAKE_VARS_H_
-
-#define SQLW_EXEC_LIMIT 256
-
-#endif // SQLW_CMAKE_VARS_H_
-

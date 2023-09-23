@@ -3,5 +3,9 @@
 
 #define SQLW_EXEC_LIMIT @SQLW_EXEC_LIMIT@
 
+#if @SQLW_USE_JSON_STRING_RESULT_VAR@ == 1
+#define SQLW_JSON_STRING_RESULT_H_
+#endif
+
 #endif // SQLW_CMAKE_VARS_H_
 
