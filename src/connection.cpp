@@ -8,10 +8,7 @@ sqlw::Connection::Connection(std::string_view file_name)
 
 sqlw::Connection::~Connection()
 {
-	if (nullptr != m_handle)
-	{
-		sqlite3_close(m_handle);
-	}
+	this->close();
 }
 
 sqlw::Connection::Connection(sqlw::Connection&& other) noexcept
@@ -41,6 +38,15 @@ void sqlw::Connection::connect(std::string_view file_name)
 
 	if (m_status != sqlw::status::Code::SQLW_OK)
 	{
+		this->close();
+	}
+}
+
+void sqlw::Connection::close()
+{
+	if (nullptr != m_handle)
+	{
 		sqlite3_close(m_handle);
+		m_handle = nullptr;
 	}
 }

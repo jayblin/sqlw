@@ -36,6 +36,8 @@ namespace sqlw
 			return m_status;
 		}
 
+		auto close() -> void;
+
 	private:
 		gsl::owner<sqlite3*> m_handle {nullptr};
 		status::Code m_status {status::Code::_CLOSED_};
