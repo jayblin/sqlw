@@ -87,4 +87,12 @@ TEST(utils, string_view_to_double)
 		ASSERT_EQ(std::errc(), ec);
 		ASSERT_DOUBLE_EQ(123.0, r);
 	}
+
+	{
+		double r;
+		std::errc ec = sqlw::utils::to_double("123", r);
+
+		ASSERT_EQ(std::errc(), ec);
+		ASSERT_DOUBLE_EQ(123.0, r);
+	}
 }

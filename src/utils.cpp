@@ -54,6 +54,11 @@ std::errc sqlw::utils::to_double(std::string_view str, double& result) noexcept
 		}
 	}
 
+	if (0 == dot)
+	{
+		dot = str.size();
+	}
+
 	// digits10 is number of digits that can be represented without
 	// loss or mangling.
 	constexpr size_t digits10 = static_cast<size_t>(std::numeric_limits<double>::digits10);

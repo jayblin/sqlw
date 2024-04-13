@@ -237,3 +237,61 @@ GTEST_TEST(Statement, does_report_misuse)
 	ASSERT_NE(sqlw::status::Code::SQLW_OK, stmt.status())
 	    << sqlw::status::verbose(stmt.status());
 }
+
+GTEST_TEST(Statement, can_bind_double_type_parameters)
+{
+	sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, nullptr);
+
+	sqlw::Connection con {":memory:"};
+	sqlw::Statement stmt {&con};
+
+	stmt(
+	    R"(CREATE TABLE user (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name REAL
+			)
+		)"
+	);
+
+	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
+	    << sqlw::status::verbose(stmt.status());
+
+	stmt
+		.prepare(
+			"INSERT INTO user (id, name) "
+			"VALUES "
+			"(1,:1),"
+			"(2,:2),"
+			"(3,:3),"
+			"(4,:4)"
+		)
+		.bind(1, "0.22", sqlw::Type::SQL_DOUBLE)
+		.bind(2, 1.45)
+		.bind(3, "100", sqlw::Type::SQL_DOUBLE)
+		.bind(4, (double) 100)
+		.exec();
+
+	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
+	    << sqlw::status::verbose(stmt.status());
+
+	std::stringstream ss;
+	stmt(
+		"SELECT * FROM user",
+		[&ss](sqlw::Statement::ExecArgs e)
+		{
+			ss << e.column_name << ':' << e.column_value << '\n';
+		}
+	);
+
+	ASSERT_STREQ(
+		"id:1\n"
+		"name:0.22\n"
+		"id:2\n"
+		"name:1.45\n"
+		"id:3\n"
+		"name:100\n"
+		"id:4\n"
+		"name:100\n",
+		ss.str().data()
+	);
+}
