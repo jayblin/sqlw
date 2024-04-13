@@ -3,13 +3,19 @@
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
 #include "sqlw/status.hpp"
+#include "sqlw/utils.hpp"
+#include <cctype>
+#include <charconv>
+#include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 sqlw::Statement::Statement(sqlw::Connection* con) :
     m_connection(con)
@@ -137,7 +143,7 @@ sqlw::Statement& sqlw::Statement::bind(
     int idx,
     std::string_view value,
     sqlw::Type t
-)
+) noexcept
 {
 	int rc = 0;
 
@@ -153,8 +159,21 @@ sqlw::Statement& sqlw::Statement::bind(
 			);
 			break;
 		case sqlw::Type::SQL_DOUBLE:
-			rc = sqlite3_bind_double(m_stmt, idx, std::stod(value.data()));
+		{
+			// can't use from_chars on mac((((
+			// https://en.cppreference.com/w/cpp/compiler_support/17#C.2B.2B17_library_features
+			double v;
+			std::errc ec = sqlw::utils::to_double(value, v);
+
+			if (ec != std::errc())
+			{
+				m_status = status::Code::SQLW_MISUSE;
+				return *this;
+			}
+
+			rc = sqlite3_bind_double(m_stmt, idx, v);
 			break;
+		}
 		case sqlw::Type::SQL_BLOB:
 			rc = sqlite3_bind_blob(
 			    m_stmt,
@@ -165,12 +184,51 @@ sqlw::Statement& sqlw::Statement::bind(
 			);
 			break;
 		case sqlw::Type::SQL_INT:
-			rc = sqlite3_bind_int(m_stmt, idx, std::stoi(value.data()));
+		{
+			int v;
+			std::from_chars_result fcr = std::from_chars(
+				value.data(),
+				value.data() + value.size(),
+				v
+			);
+
+			if (fcr.ec != std::errc())
+			{
+				m_status = status::Code::SQLW_MISUSE;
+				return *this;
+			}
+
+			rc = sqlite3_bind_int(m_stmt, idx, v);
 			break;
+		}
 		case sqlw::Type::SQL_NULL:
 			rc = sqlite3_bind_null(m_stmt, idx);
 			break;
 	}
+
+	m_status = static_cast<status::Code>(rc);
+
+	return *this;
+}
+
+sqlw::Statement& sqlw::Statement::bind(
+    int idx,
+    double value
+) noexcept
+{
+	int rc = sqlite3_bind_double(m_stmt, idx, value);
+
+	m_status = static_cast<status::Code>(rc);
+
+	return *this;
+}
+
+sqlw::Statement& sqlw::Statement::bind(
+    int idx,
+    int value
+) noexcept
+{
+	int rc = sqlite3_bind_int(m_stmt, idx, value);
 
 	m_status = static_cast<status::Code>(rc);
 

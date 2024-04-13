@@ -1,20 +1,7 @@
 #include "sqlw/json_string_result.hpp"
 #include "sqlw/forward.hpp"
+#include "sqlw/utils.hpp"
 #include <algorithm>
-
-static bool is_numeric(const std::string_view& value)
-{
-	const auto it = std::find_if(
-	    value.begin(),
-	    value.end(),
-	    [](char const& c)
-	    {
-		    return !std::isdigit(c) && c != '.';
-	    }
-	);
-
-	return it == value.end();
-}
 
 static bool is_json_array(const std::string_view& value)
 {
@@ -23,7 +10,7 @@ static bool is_json_array(const std::string_view& value)
 
 static bool should_be_quoted(const std::string_view& value)
 {
-	return !(value.length() > 0 && (is_numeric(value) || is_json_array(value)));
+	return !(value.length() > 0 && (sqlw::is_numeric(value) || is_json_array(value)));
 }
 
 static void close_braces_if_needed(std::stringstream& stream)

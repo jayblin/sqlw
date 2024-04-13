@@ -10,7 +10,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 
 option(SQLW_BUILD_TESTS "Build test programs" ${SQLW_STANDALONE})
-option(SQLW_USE_JSON_STRING_RESULT "Build JsonStringResult" ON)
+option(SQLW_USE_JSON_STRING_RESULT "Build JsonStringResult" OFF)
 
 set(SQLW_EXEC_LIMIT 256 CACHE STRING "Default limit for consecutive queries and for SELECT results" FORCE)
 
@@ -27,6 +27,7 @@ add_library(
 		src/connection.cpp
 		src/statement.cpp
 		src/status.cpp
+		src/utils.cpp
 		$<IF:$<BOOL:${SQLW_USE_JSON_STRING_RESULT}>,src/json_string_result.cpp,>
 )
 
@@ -95,7 +96,8 @@ add_executable(
 	tests/status.cpp
 	tests/connection.cpp
 	tests/statement.cpp
-	tests/json_string_result.cpp
+	tests/utils.cpp
+	$<IF:$<BOOL:${SQLW_USE_JSON_STRING_RESULT}>,tests/json_string_result.cpp,>
 )
 
 add_dependencies(sqlw_tests sqlw_tests_executable)

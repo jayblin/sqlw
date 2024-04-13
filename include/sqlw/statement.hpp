@@ -51,7 +51,11 @@ namespace sqlw
 		 * Binds a value to argument at position `idx`.
 		 */
 		auto bind(int idx, std::string_view value, Type t = Type::SQL_TEXT)
-		    -> Statement&;
+		    noexcept -> Statement&;
+
+		auto bind(int idx, double value) noexcept -> Statement&;
+
+		auto bind(int idx, int value) noexcept -> Statement&;
 
 		auto prepare(std::string_view sql) -> Statement&;
 
