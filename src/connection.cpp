@@ -1,5 +1,5 @@
 #include "sqlw/connection.hpp"
-#include <iostream>
+#include "sqlw/forward.hpp"
 
 sqlw::Connection::Connection(std::string_view file_name)
 {
@@ -24,7 +24,7 @@ sqlw::Connection& sqlw::Connection::operator=(sqlw::Connection&& other) noexcept
 		m_status = other.m_status;
 
 		other.m_handle = nullptr;
-		other.m_status = sqlw::status::Code::_CLOSED_;
+		other.m_status = sqlw::status::Code::CLOSED_HANDLE;
 	}
 
 	return *this;
@@ -36,7 +36,7 @@ void sqlw::Connection::connect(std::string_view file_name)
 
 	m_status = static_cast<status::Code>(rc);
 
-	if (m_status != sqlw::status::Code::SQLW_OK)
+	if (status::Condition::OK != m_status)
 	{
 		this->close();
 	}

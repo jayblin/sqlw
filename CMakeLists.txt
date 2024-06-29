@@ -89,10 +89,10 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_custom_target(sqlw_tests)
+add_custom_target(sqlw_tests_t)
 
 add_executable(
-	sqlw_tests_executable
+	sqlw_tests
 	tests/status.cpp
 	tests/connection.cpp
 	tests/statement.cpp
@@ -100,15 +100,15 @@ add_executable(
 	$<IF:$<BOOL:${SQLW_USE_JSON_STRING_RESULT}>,tests/json_string_result.cpp,>
 )
 
-add_dependencies(sqlw_tests sqlw_tests_executable)
+add_dependencies(sqlw_tests sqlw_tests_t)
 
 target_link_libraries(
-	sqlw_tests_executable
+	sqlw_tests
 	PRIVATE GTest::gtest_main sqlw
 )
 
 include(GoogleTest)
 
-gtest_discover_tests(sqlw_tests_executable)
+# gtest_discover_tests(sqlw_tests_executable)
 
 # ~TESTS

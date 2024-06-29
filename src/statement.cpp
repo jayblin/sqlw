@@ -2,15 +2,10 @@
 #include "sqlw/cmake_vars.h"
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
-#include "sqlw/status.hpp"
 #include "sqlw/utils.hpp"
-#include <cctype>
 #include <charconv>
 #include <cstdlib>
 #include <functional>
-#include <limits>
-#include <numeric>
-#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -42,6 +37,7 @@ sqlw::Statement& sqlw::Statement::operator=(sqlw::Statement&& other) noexcept
 		other.m_stmt = nullptr;
 		other.m_connection = nullptr;
 		other.m_unused_sql = nullptr;
+        other.m_status = status::Code::CLOSED_HANDLE;
 	}
 
 	return *this;
@@ -50,9 +46,9 @@ sqlw::Statement& sqlw::Statement::operator=(sqlw::Statement&& other) noexcept
 sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
 {
 	auto rc = sqlite3_step(m_stmt);
-	m_status = static_cast<status::Code>(rc);
+	m_status = status::Code{rc};
 
-	if (!sqlw::status::is_ok(m_status))
+	if (sqlw::status::Condition::OK != m_status)
 	{
 		return *this;
 	}
@@ -61,10 +57,10 @@ sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
 
 	if (0 == col_count)
 	{
-		m_status = status::Code::SQLW_DONE;
+		m_status = status::Code{SQLITE_DONE};
 	}
 
-	if (status::Code::SQLW_DONE == m_status)
+	if (status::Condition::DONE == m_status)
 	{
 		return *this;
 	}
@@ -94,7 +90,7 @@ sqlw::Statement& sqlw::Statement::prepare(std::string_view sql)
 	    &m_unused_sql
 	);
 
-	m_status = static_cast<status::Code>(rc);
+	m_status = status::Code{rc};
 
 	return *this;
 }
@@ -109,12 +105,12 @@ void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
 
 		std::string_view unused {m_unused_sql};
 
-		if (sqlw::status::Code::SQLW_DONE == m_status && !unused.empty())
+		if (sqlw::status::Condition::DONE == m_status && !unused.empty())
 		{
 			sqlite3_finalize(m_stmt);
 			prepare(unused);
 		}
-		else if (sqlw::status::Code::SQLW_ROW != m_status)
+		else if (sqlw::status::Condition::ROW != m_status)
 		{
 			break;
 		}
@@ -130,7 +126,7 @@ void sqlw::Statement::operator()(
 {
 	prepare(sql);
 
-	if (sqlw::status::Code::SQLW_OK == m_status)
+	if (sqlw::status::Condition::OK == m_status)
 	{
 		operator()(callback);
 	}
@@ -166,7 +162,7 @@ sqlw::Statement& sqlw::Statement::bind(
 
 			if (ec != std::errc())
 			{
-				m_status = status::Code::SQLW_MISUSE;
+				m_status = status::Code{SQLITE_MISUSE};
 				return *this;
 			}
 
@@ -193,7 +189,7 @@ sqlw::Statement& sqlw::Statement::bind(
 
 			if (fcr.ec != std::errc())
 			{
-				m_status = status::Code::SQLW_MISUSE;
+				m_status = status::Code{SQLITE_MISUSE};
 				return *this;
 			}
 
@@ -205,7 +201,7 @@ sqlw::Statement& sqlw::Statement::bind(
 			break;
 	}
 
-	m_status = static_cast<status::Code>(rc);
+	m_status = status::Code{rc};
 
 	return *this;
 }
@@ -217,7 +213,7 @@ sqlw::Statement& sqlw::Statement::bind(
 {
 	int rc = sqlite3_bind_double(m_stmt, idx, value);
 
-	m_status = static_cast<status::Code>(rc);
+	m_status = status::Code{rc};
 
 	return *this;
 }
@@ -229,7 +225,7 @@ sqlw::Statement& sqlw::Statement::bind(
 {
 	int rc = sqlite3_bind_int(m_stmt, idx, value);
 
-	m_status = static_cast<status::Code>(rc);
+	m_status = status::Code{rc};
 
 	return *this;
 }

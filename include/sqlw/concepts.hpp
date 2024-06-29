@@ -3,7 +3,6 @@
 
 #include "sqlw/forward.hpp"
 #include <concepts>
-#include <string>
 
 namespace sqlw
 {

@@ -1,6 +1,5 @@
 #include "sqlw/utils.hpp"
 #include <gtest/gtest.h>
-#include <limits>
 
 TEST(utils, string_view_to_double)
 {

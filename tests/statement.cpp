@@ -1,30 +1,37 @@
 #include "sqlw/statement.hpp"
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
-#include "sqlw/status.hpp"
 #include <gtest/gtest.h>
 #include <sstream>
+#include <system_error>
+
+static void errorLogCallback(void *pArg, int iErrCode, const char *zMsg)
+{
+	std::cout << '[' << iErrCode << "] " << zMsg << '\n';
+}
 
 GTEST_TEST(Statement, can_execute_statements)
 {
+	sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, nullptr);
+
 	sqlw::Connection con {":memory:"};
 	sqlw::Statement stmt {&con};
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_OK, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    std::error_code ec = stmt.status();
+    ASSERT_TRUE(sqlw::status::Condition::OK == ec) << ec;
 
 	stmt(R"(CREATE TABLE user (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE
 	);)");
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    ec = stmt.status();
+	ASSERT_TRUE(sqlw::status::Condition::DONE == ec) << ec;
 
 	stmt("INSERT INTO user (id, name) VALUES (1,'kate'),(2,'eris');");
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    ec = stmt.status();
+	ASSERT_TRUE(sqlw::status::Condition::DONE == ec) << ec;
 
 	{
 		std::stringstream ss;
@@ -56,14 +63,14 @@ GTEST_TEST(Statement, can_execute_statements)
 		    },
 		    "id:2,name:eris\n",
 		    ss.str()
-		) << sqlw::status::verbose(stmt.status());
+		) << std::error_code{stmt.status()};
 	}
 
 	{
 		stmt("SELECT * FROM user");
 
-		ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
-		    << sqlw::status::verbose(stmt.status());
+        ec = stmt.status();
+        ASSERT_TRUE(sqlw::status::Condition::DONE == ec) << ec;
 
 		std::stringstream ss;
 		int i = 0;
@@ -94,12 +101,14 @@ GTEST_TEST(Statement, can_execute_statements)
 		    },
 		    "id:1,name:kate\nid:2,name:eris\n",
 		    ss.str()
-		) << sqlw::status::verbose(stmt.status());
+		) << std::error_code{stmt.status()};
 	}
 }
 
 GTEST_TEST(Statement, can_execute_multiple_statements)
 {
+	sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, nullptr);
+
 	sqlw::Connection con {":memory:"};
 	sqlw::Statement stmt {&con};
 
@@ -111,8 +120,8 @@ GTEST_TEST(Statement, can_execute_multiple_statements)
 	    "INSERT INTO user (id, name) VALUES (1,'zavala'),(2,'cade');"
 	);
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    std::error_code ec = stmt.status();
+    ASSERT_TRUE(sqlw::status::Condition::DONE == ec) << ec;
 
 	{
 		std::stringstream ss;
@@ -145,12 +154,14 @@ GTEST_TEST(Statement, can_execute_multiple_statements)
 		    },
 		    "id:1,name:zavala\nid:2,name:cade\n",
 		    ss.str()
-		) << sqlw::status::verbose(stmt.status());
+		) << std::error_code{stmt.status()};
 	}
 }
 
 GTEST_TEST(Statement, can_bind_parameters)
 {
+	sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, nullptr);
+
 	sqlw::Connection con {":memory:"};
 	sqlw::Statement stmt {&con};
 
@@ -162,8 +173,8 @@ GTEST_TEST(Statement, can_bind_parameters)
 	    "INSERT INTO user (id, name) VALUES (1,'drifter'),(2,'clovis');"
 	);
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    std::error_code ec = stmt.status();
+    ASSERT_TRUE(sqlw::status::Condition::DONE == ec) << ec;
 
 	{
 		std::stringstream ss;
@@ -175,8 +186,9 @@ GTEST_TEST(Statement, can_bind_parameters)
 		    .bind(1, "clovis", sqlw::Type::SQL_TEXT)
 		    .bind(2, "1", sqlw::Type::SQL_INT);
 
-		ASSERT_EQ(sqlw::status::Code::SQLW_OK, stmt.status())
-		    << sqlw::status::verbose(stmt.status());
+
+        ec = stmt.status();
+        ASSERT_TRUE(sqlw::status::Condition::OK == ec) << ec;
 
 		stmt(
 		    [&i, &ss](sqlw::Statement::ExecArgs args)
@@ -204,13 +216,8 @@ GTEST_TEST(Statement, can_bind_parameters)
 		    },
 		    "id:1,name:drifter\nid:2,name:clovis\n",
 		    ss.str()
-		) << sqlw::status::verbose(stmt.status());
+		) << std::error_code{stmt.status()};
 	}
-}
-
-static void errorLogCallback(void *pArg, int iErrCode, const char *zMsg)
-{
-	std::cout << '[' << iErrCode << "] " << zMsg << '\n';
 }
 
 GTEST_TEST(Statement, does_report_misuse)
@@ -220,22 +227,22 @@ GTEST_TEST(Statement, does_report_misuse)
 	sqlw::Connection con {":memory:"};
 	sqlw::Statement stmt {&con};
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_OK, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    std::error_code ec = stmt.status();
+    ASSERT_TRUE(sqlw::status::Condition::OK == ec) << ec;
 
 	stmt(R"(CREATE TABLE user (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE
 	);)");
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+
+    ec = stmt.status();
+	ASSERT_TRUE(sqlw::status::Condition::DONE == ec) << ec;
 
 	stmt("INSERT INTO user (id, name) VALUES (1,'kate'),(2,'eris'");
 
-	std::cout << sqlw::status::verbose(stmt.status()) << '\n';
-	ASSERT_NE(sqlw::status::Code::SQLW_OK, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    ec = stmt.status();
+    ASSERT_TRUE(sqlw::status::Condition::ERROR == ec) << ec;
 }
 
 GTEST_TEST(Statement, can_bind_double_type_parameters)
@@ -253,8 +260,8 @@ GTEST_TEST(Statement, can_bind_double_type_parameters)
 		)"
 	);
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    std::error_code ec = stmt.status();
+    ASSERT_TRUE(sqlw::status::Condition::DONE == ec) << ec;
 
 	stmt
 		.prepare(
@@ -271,8 +278,8 @@ GTEST_TEST(Statement, can_bind_double_type_parameters)
 		.bind(4, (double) 100)
 		.exec();
 
-	ASSERT_EQ(sqlw::status::Code::SQLW_DONE, stmt.status())
-	    << sqlw::status::verbose(stmt.status());
+    ec = stmt.status();
+	ASSERT_TRUE(sqlw::status::Condition::DONE == ec) << ec;
 
 	std::stringstream ss;
 	stmt(

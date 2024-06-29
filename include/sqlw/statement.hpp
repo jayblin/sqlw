@@ -2,20 +2,15 @@
 #define SQLW_STATEMENT_H_
 
 #include "gsl/pointers"
-#include "sqlite3.h"
 #include "sqlw/cmake_vars.h"
 #include "sqlw/concepts.hpp"
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
 #include <functional>
-#include <initializer_list>
-#include <iostream>
 #include <memory>
-#include <optional>
-#include <span>
-#include <sstream>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 namespace sqlw
 {
@@ -84,15 +79,15 @@ namespace sqlw
 		auto operator()(std::string_view sql, callback_type callback = nullptr)
 		    -> void;
 
-		constexpr auto status() const -> status::Code
-		{
-			return m_status;
-		}
+        auto status() const -> std::error_code
+        {
+            return m_status;
+        }
 
 	private:
 		Connection* m_connection {nullptr};
 		gsl::owner<sqlite3_stmt*> m_stmt {nullptr};
-		status::Code m_status {status::Code::SQLW_OK};
+        std::error_code m_status {status::Code{}};
 		gsl::owner<const char*> m_unused_sql {nullptr};
 	};
 
@@ -110,7 +105,7 @@ namespace sqlw
 
 			const auto col_count = sqlite3_data_count(m_stmt);
 
-			if (status::Code::SQLW_DONE == m_status || 0 == col_count)
+			if (status::Condition::OK == m_status || 0 == col_count)
 			{
 				break;
 			}
@@ -126,7 +121,7 @@ namespace sqlw
 				obj.column(sqlite3_column_name(m_stmt, i), t, column_value(t, i));
 			}
 		}
-		while (status::Code::SQLW_ROW == m_status && iter < SQLW_EXEC_LIMIT);
+		while (status::Condition::ROW == m_status && iter < SQLW_EXEC_LIMIT);
 
 		return obj;
 	}
