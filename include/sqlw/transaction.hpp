@@ -3,8 +3,6 @@
 
 #include "sqlw/connection.hpp"
 #include "sqlw/statement.hpp"
-#include <concepts>
-#include <iostream>
 #include <system_error>
 #include <type_traits>
 #include <utility>
@@ -20,15 +18,25 @@ class Transaction
         Statement::callback_type callback = nullptr;
     };
 
-    Transaction(sqlw::Connection& con) : m_con(con)
+    Transaction(sqlw::Connection* con) : m_con(con)
     {
     }
 
     Transaction(const Transaction&) = delete;
     Transaction& operator=(const Transaction&) = delete;
 
-    Transaction(Transaction&&) noexcept;
-    Transaction& operator=(Transaction&&) noexcept;
+    Transaction(Transaction&& other) noexcept
+    {
+        *this = std::move(other);
+    }
+
+    Transaction& operator=(Transaction&& other) noexcept
+    {
+        m_con = other.m_con;
+        other.m_con = nullptr;
+
+        return *this;
+    }
 
     /**
      * Executes all prepared statements. Invokes the `callback`
@@ -37,10 +45,9 @@ class Transaction
     template <typename... ThingsToBind>
     auto operator()(
         InvocationArgs args,
-        const ThingsToBind&&... bindables
-    ) noexcept -> std::error_code
+        const ThingsToBind&&... bindables) noexcept -> std::error_code
     {
-        sqlw::Statement stmt{&m_con};
+        sqlw::Statement stmt{m_con};
         stmt("SAVEPOINT _savepoint_");
 
         std::error_code ec = stmt.status();
@@ -101,7 +108,7 @@ class Transaction
     }
 
   private:
-    sqlw::Connection& m_con;
+    sqlw::Connection* m_con{nullptr};
 };
 } // namespace sqlw
 
