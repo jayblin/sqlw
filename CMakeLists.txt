@@ -97,6 +97,7 @@ add_executable(
 	tests/connection.cpp
 	tests/statement.cpp
 	tests/utils.cpp
+    tests/transaction.cpp
 	$<IF:$<BOOL:${SQLW_USE_JSON_STRING_RESULT}>,tests/json_string_result.cpp,>
 )
 
