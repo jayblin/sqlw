@@ -31,7 +31,7 @@ GTEST_TEST(Transaction, does_persist_data)
     ec = stmt.status();
     ASSERT_TRUE(sqlw::status::Condition::OK == ec) << ec.message();
 
-    sqlw::Transaction t{con};
+    sqlw::Transaction t{&con};
 
     ec =
         t({"INSERT INTO user (id, name) VALUES (?1, ?2)"},
@@ -70,7 +70,7 @@ GTEST_TEST(Transaction, does_rollback)
     ec = stmt.status();
     ASSERT_TRUE(sqlw::status::Condition::OK == ec) << ec.message();
 
-    sqlw::Transaction t{con};
+    sqlw::Transaction t{&con};
 
     ec =
         t({"INSERT INTO user (id, name) VALUES (?1, ?2);"
@@ -106,7 +106,7 @@ GTEST_TEST(Transaction, can_callback)
     ec = stmt.status();
     ASSERT_TRUE(sqlw::status::Condition::OK == ec) << ec.message();
 
-    sqlw::Transaction t{con};
+    sqlw::Transaction t{&con};
 
     std::stringstream ss;
     ec =
