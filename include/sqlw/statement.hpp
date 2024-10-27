@@ -55,7 +55,7 @@ namespace sqlw
 		auto prepare(std::string_view sql) -> Statement&;
 
 		/**
-		 * Executes the statement once.
+		 * Executes the first statement up until ";".
 		 * Usefull for INSERT/UPDATE/DELETE.
 		 */
 		auto exec(callback_type callback = nullptr) -> Statement&;
@@ -74,8 +74,16 @@ namespace sqlw
 		auto operator()(std::string_view sql, callback_type callback = nullptr)
 		    -> T;
 
+        /**
+         * Executes all prepared statements. Invokes the `callback`
+         * on each execution.
+         */
 		auto operator()(callback_type callback = nullptr) -> void;
 
+        /**
+         * Prepares statements provided in `sql`. Executes them.
+         * Invokes the `callback` on each execution.
+         */
 		auto operator()(std::string_view sql, callback_type callback = nullptr)
 		    -> void;
 
