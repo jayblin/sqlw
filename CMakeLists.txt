@@ -28,6 +28,7 @@ add_library(
 		src/statement.cpp
 		src/status.cpp
 		src/utils.cpp
+        src/transaction.cpp
 		$<IF:$<BOOL:${SQLW_USE_JSON_STRING_RESULT}>,src/json_string_result.cpp,>
 )
 

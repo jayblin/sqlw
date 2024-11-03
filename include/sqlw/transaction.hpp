@@ -2,7 +2,9 @@
 #define SQLW_TRANSACTION_H_
 
 #include "sqlw/connection.hpp"
+#include "sqlw/forward.hpp"
 #include "sqlw/statement.hpp"
+#include <span>
 #include <system_error>
 #include <tuple>
 #include <type_traits>
@@ -36,6 +38,7 @@ class Transaction
 
     /**
      * Executes all prepared statements provided in `sql` in a transaction.
+     * Binds each element of tuple to a parameter in statement.
      * Invokes the `callback` on each execution.
      */
     template <typename... ThingsToBind>
@@ -47,6 +50,7 @@ class Transaction
 
     /**
      * Executes all prepared statements provided in `sql` in a transaction.
+     * Binds each element of tuple to a parameter in statement.
      */
     template <typename... ThingsToBind>
     auto operator()(
@@ -61,6 +65,26 @@ class Transaction
     auto operator()(
         std::string_view sql,
         Statement::callback_type callback = nullptr) noexcept
+        -> std::error_code;
+
+    /**
+     * Executes all prepared statements provided in `sql` in a transaction.
+     * Binds each element of array to a parameter in statement.
+     * Invokes the `callback` on each execution.
+     */
+    auto operator()(
+        std::string_view sql,
+        Statement::callback_type callback,
+        std::span<const std::pair<std::string_view, sqlw::Type>> params) noexcept
+        -> std::error_code;
+
+    /**
+     * Executes all prepared statements provided in `sql` in a transaction.
+     * Binds each element of array to a parameter in statement.
+     */
+    auto operator()(
+        std::string_view sql,
+        std::span<const std::pair<std::string_view, sqlw::Type>> params) noexcept
         -> std::error_code;
 
   private:
