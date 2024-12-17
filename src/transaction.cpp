@@ -16,11 +16,13 @@ std::error_code sqlw::Transaction::operator()(
 
     if (ec != sqlw::status::Condition::OK)
     {
-        if (stmt("ROLLBACK TO _savepoint_") != sqlw::status::Condition::OK) {
+        if (stmt("ROLLBACK TO _savepoint_") != sqlw::status::Condition::OK)
+        {
             return sqlw::status::Code::ROLLBACK_ERROR;
         }
     }
-    else {
+    else
+    {
         if (stmt("RELEASE _savepoint_") != sqlw::status::Condition::OK)
         {
             return sqlw::status::Code::RELEASE_ERROR;

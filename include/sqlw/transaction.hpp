@@ -41,8 +41,7 @@ class Transaction
      */
     auto operator()(
         std::string_view sql,
-        Statement::callback_t = nullptr) noexcept
-        -> std::error_code;
+        Statement::callback_t = nullptr) noexcept -> std::error_code;
 
     /**
      * Prepares and executes all statements passed in `sql`.
@@ -50,8 +49,7 @@ class Transaction
      */
     auto operator()(
         std::string_view sql,
-        std::span<const Statement::bindable_t>
-    ) noexcept -> std::error_code;
+        std::span<const Statement::bindable_t>) noexcept -> std::error_code;
 
     /**
      * Prepares and executes all statements passed in `sql`.
@@ -61,8 +59,7 @@ class Transaction
     auto operator()(
         std::string_view sql,
         Statement::callback_t,
-        std::span<const Statement::bindable_t>
-    ) noexcept -> std::error_code;
+        std::span<const Statement::bindable_t>) noexcept -> std::error_code;
 
     /**
      * Prepares and executes all statements passed in `sql`.
@@ -72,11 +69,10 @@ class Transaction
      * prepared statement.
      */
     template <typename... ThingsToBind>
-    requires sqlw::statement::internal::are_bindable<ThingsToBind...>
+        requires sqlw::statement::internal::are_bindable<ThingsToBind...>
     auto operator()(
         std::string_view sql,
-        std::tuple<ThingsToBind...>&&) noexcept
-        -> std::error_code;
+        std::tuple<ThingsToBind...>&&) noexcept -> std::error_code;
 
     /**
      * Prepares and executes all statements passed in `sql`.
@@ -87,12 +83,11 @@ class Transaction
      * prepared statement.
      */
     template <typename... ThingsToBind>
-    requires sqlw::statement::internal::are_bindable<ThingsToBind...>
+        requires sqlw::statement::internal::are_bindable<ThingsToBind...>
     auto operator()(
         std::string_view sql,
         Statement::callback_t,
-        std::tuple<ThingsToBind...>&&) noexcept
-        -> std::error_code;
+        std::tuple<ThingsToBind...>&&) noexcept -> std::error_code;
 
   private:
     sqlw::Connection* m_con{nullptr};
@@ -116,11 +111,13 @@ std::error_code Transaction::operator()(
 
     if (ec != sqlw::status::Condition::OK)
     {
-        if (stmt("ROLLBACK TO _savepoint_") != sqlw::status::Condition::OK) {
+        if (stmt("ROLLBACK TO _savepoint_") != sqlw::status::Condition::OK)
+        {
             return sqlw::status::Code::ROLLBACK_ERROR;
         }
     }
-    else {
+    else
+    {
         if (stmt("RELEASE _savepoint_") != sqlw::status::Condition::OK)
         {
             return sqlw::status::Code::RELEASE_ERROR;
@@ -131,7 +128,7 @@ std::error_code Transaction::operator()(
 }
 
 template <typename... ThingsToBind>
-requires sqlw::statement::internal::are_bindable<ThingsToBind...>
+    requires sqlw::statement::internal::are_bindable<ThingsToBind...>
 std::error_code Transaction::operator()(
     std::string_view sql,
     std::tuple<ThingsToBind...>&& bindables) noexcept

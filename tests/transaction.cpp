@@ -151,8 +151,8 @@ INSTANTIATE_TEST_SUITE_P(
             "A4",
             [](sqlw::Transaction& t) {
                 return t("INSERT INTO user (id, name) VALUES (3,'bob');"
-                            "INSERT INTO user (id, name) VALUES (4,'john');"
-                            "INSERT INTO user (id, uiui) VALUES (5,'ronda')");
+                         "INSERT INTO user (id, name) VALUES (4,'john');"
+                         "INSERT INTO user (id, uiui) VALUES (5,'ronda')");
             },
             sqlw::status::Condition::ERROR,
             "1,kate,2,eris,",
@@ -487,13 +487,13 @@ INSTANTIATE_TEST_SUITE_P(
             "E2",
             [](sqlw::Transaction& t) {
                 std::stringstream ss;
-                auto ec = t(
-                    "INSERT INTO user (id, name) VALUES (3, 'bob');"
-                    "UPDATE user SET name = 'Bob' WHERE id = 3;"
-                    "SELECT * FROM user WHEREre id = 1",
-                    [&](sqlw::Statement::ExecArgs e) {
-                        ss << e.column_value << ",";
-                    });
+                auto ec =
+                    t("INSERT INTO user (id, name) VALUES (3, 'bob');"
+                      "UPDATE user SET name = 'Bob' WHERE id = 3;"
+                      "SELECT * FROM user WHEREre id = 1",
+                      [&](sqlw::Statement::ExecArgs e) {
+                          ss << e.column_value << ",";
+                      });
                 ([&]() { ASSERT_STREQ("", ss.str().data()); })();
                 return ec;
             },

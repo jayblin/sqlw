@@ -8,45 +8,45 @@
 
 namespace sqlw
 {
-	/**
-	 * Object to pass to `sqlite3_exec` function.
-	 */
-	class JsonStringResult
-	{
-	public:
-		JsonStringResult() {};
+/**
+ * Object to pass to `sqlite3_exec` function.
+ */
+class JsonStringResult
+{
+  public:
+    JsonStringResult(){};
 
-		JsonStringResult(const JsonStringResult&) = delete;
-		JsonStringResult& operator=(const JsonStringResult&) = delete;
+    JsonStringResult(const JsonStringResult&) = delete;
+    JsonStringResult& operator=(const JsonStringResult&) = delete;
 
-		JsonStringResult(JsonStringResult&&) noexcept;
-		JsonStringResult& operator=(JsonStringResult&&) noexcept;
+    JsonStringResult(JsonStringResult&&) noexcept;
+    JsonStringResult& operator=(JsonStringResult&&) noexcept;
 
-		/**
-		 * Callback to pass to `sqlite3_exec` function.
-		 */
-		static int callback(void* obj, int argc, char** argv, char** col_name);
+    /**
+     * Callback to pass to `sqlite3_exec` function.
+     */
+    static int callback(void* obj, int argc, char** argv, char** col_name);
 
-		auto row(int column_count) -> void;
+    auto row(int column_count) -> void;
 
-		auto column(std::string_view name, Type type, std::string_view value)
-		    -> void;
+    auto column(std::string_view name, Type type, std::string_view value)
+        -> void;
 
-		/**
-		 * Returns result as json array.
-		 */
-		auto get_array_result() -> std::string;
+    /**
+     * Returns result as json array.
+     */
+    auto get_array_result() -> std::string;
 
-		/**
-		 * Returns result as json object.
-		 */
-		auto get_object_result() -> std::string;
+    /**
+     * Returns result as json object.
+     */
+    auto get_object_result() -> std::string;
 
-		auto has_result() -> bool;
+    auto has_result() -> bool;
 
-	private:
-		std::stringstream m_stream;
-	};
+  private:
+    std::stringstream m_stream;
+};
 } // namespace sqlw
 
 static_assert(sqlw::has_db_callback<sqlw::JsonStringResult>);
