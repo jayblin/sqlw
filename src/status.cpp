@@ -12,14 +12,23 @@ namespace sqlw::status
     {
         const char* name() const noexcept override final
         {
-            return "sqlite";
+            return "sqlw error";
         }
 
         std::string message(int ec) const override final
         {
-            if (sqlw::status::Code::CLOSED_HANDLE == sqlw::status::Code{ec})
-            {
-                return "object's handle is closed";
+            switch (sqlw::status::Code{ec}) {
+            case Code::CLOSED_HANDLE:
+                return  "object's handle is closed";
+            case Code::ROLLBACK_ERROR:
+                return "couldn't ROLLBACK";
+            case Code::SAVEPOINT_ERROR:
+                return "error at SAVEPOINT creation";
+            case Code::RELEASE_ERROR:
+                return "error on savepoint RELEASE";
+            case Code::UNUSED_PARAMETERS_ERROR:
+                return "some paramaters where not bound";
+                break;
             }
 
             return sqlite3_errstr(ec);
@@ -48,9 +57,9 @@ namespace sqlw::status
                     return "error while performing an operation";
                 case C::CLOSED_HANDLE:
                     return "object's handle is closed";
-				default:
-                    return "(unknown condition)";
 			}
+
+            return "(unknown condition)";
 		}
 
         bool equivalent(const std::error_code& ec, int cond) const noexcept override final

@@ -43,7 +43,7 @@ sqlw::Statement& sqlw::Statement::operator=(sqlw::Statement&& other) noexcept
 	return *this;
 }
 
-sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
+sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_t callback) noexcept
 {
 	auto rc = sqlite3_step(m_stmt);
 	m_status = status::Code{rc};
@@ -80,7 +80,7 @@ sqlw::Statement& sqlw::Statement::exec(sqlw::Statement::callback_type callback)
 	return *this;
 }
 
-sqlw::Statement& sqlw::Statement::prepare(std::string_view sql)
+sqlw::Statement& sqlw::Statement::prepare(std::string_view sql) noexcept
 {
 	auto rc = sqlite3_prepare_v2(
 	    m_connection->handle(),
@@ -95,12 +95,19 @@ sqlw::Statement& sqlw::Statement::prepare(std::string_view sql)
 	return *this;
 }
 
-void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
+std::error_code sqlw::Statement::operator()(
+    sqlw::Statement::callback_t callback,
+    sqlw::Statement::unused_params_t unused_params
+) noexcept
 {
 	size_t iter = 0;
 	do
 	{
-		exec(callback);
+		if (sqlw::status::Condition::OK != m_status) {
+            break;
+        }
+
+		this->exec(callback);
 		iter++;
 
 		std::string_view unused {m_unused_sql};
@@ -108,7 +115,13 @@ void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
 		if (sqlw::status::Condition::DONE == m_status && !unused.empty())
 		{
 			sqlite3_finalize(m_stmt);
-			prepare(unused);
+			this->prepare(unused);
+
+            if (sqlw::status::Condition::OK != m_status) {
+                break;
+            }
+
+            unused_params = this->bind(unused_params);
 		}
 		else if (sqlw::status::Condition::ROW != m_status)
 		{
@@ -117,19 +130,67 @@ void sqlw::Statement::operator()(sqlw::Statement::callback_type callback)
 	}
 	while (iter < SQLW_EXEC_LIMIT);
 	m_unused_sql = nullptr;
+
+    return m_status;
 }
 
-void sqlw::Statement::operator()(
-    std::string_view sql,
-    sqlw::Statement::callback_type callback
-)
+std::error_code sqlw::Statement::operator()(std::string_view sql, sqlw::Statement::callback_t callback) noexcept
 {
-	prepare(sql);
+	this->prepare(sql);
 
 	if (sqlw::status::Condition::OK == m_status)
 	{
-		operator()(callback);
+		return operator()(callback);
 	}
+
+    return m_status;
+}
+
+std::error_code sqlw::Statement::operator()(
+    std::string_view sql,
+    std::span<const sqlw::Statement::bindable_t> params
+)
+{
+    return operator()(sql, nullptr, params);
+}
+
+sqlw::Statement::unused_params_t sqlw::Statement::bind(std::span<const sqlw::Statement::bindable_t> params) noexcept
+{
+    if (params.size() == 0) {
+        return params;
+    }
+
+    size_t expected_param_count = sqlite3_bind_parameter_count(m_stmt);
+
+    size_t i = 0;
+    for (; i < params.size() && i < expected_param_count; i++) {
+        this->bind(i + 1, params[i].first, params[i].second);
+
+        if (sqlw::status::Condition::OK != m_status) {
+            break;
+        }
+    }
+
+    return params.last(params.size() - i);
+}
+
+std::error_code sqlw::Statement::operator()(std::string_view sql, sqlw::Statement::callback_t callback, std::span<const sqlw::Statement::bindable_t> params)
+{
+	prepare(sql);
+
+	if (sqlw::status::Condition::OK != m_status)
+	{
+		return m_status;
+	}
+
+    auto unused_params = this->bind(params);
+
+	if (sqlw::status::Condition::OK != m_status)
+	{
+		return m_status;
+	}
+
+    return operator()(callback, unused_params);
 }
 
 // @todo Определять динамически, когда использовать SQLITE_TRANSIENT,

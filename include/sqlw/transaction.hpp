@@ -9,7 +9,6 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include "gsl/util"
 
 namespace sqlw
 {
@@ -37,149 +36,117 @@ class Transaction
     }
 
     /**
-     * Executes all prepared statements provided in `sql` in a transaction.
-     * Binds each element of tuple to a parameter in statement.
-     * Invokes the `callback` on each execution.
+     * Prepares and executes all statements passed in `sql`.
+     * Executes callback on each row fetch.
+     */
+    auto operator()(
+        std::string_view sql,
+        Statement::callback_t = nullptr) noexcept
+        -> std::error_code;
+
+    /**
+     * Prepares and executes all statements passed in `sql`.
+     * Binds parameters passed in the span.
+     */
+    auto operator()(
+        std::string_view sql,
+        std::span<const Statement::bindable_t>
+    ) noexcept -> std::error_code;
+
+    /**
+     * Prepares and executes all statements passed in `sql`.
+     * Executes callback on each row fetch.
+     * Binds parameters passed in the span.
+     */
+    auto operator()(
+        std::string_view sql,
+        Statement::callback_t,
+        std::span<const Statement::bindable_t>
+    ) noexcept -> std::error_code;
+
+    /**
+     * Prepares and executes all statements passed in `sql`.
+     * Binds parameters passed in the tuple.
+     *
+     * @note This function can bind parameters only for the first
+     * prepared statement.
      */
     template <typename... ThingsToBind>
+    requires sqlw::statement::internal::are_bindable<ThingsToBind...>
     auto operator()(
         std::string_view sql,
-        Statement::callback_type callback,
-        const std::tuple<ThingsToBind...>& bindables) noexcept
+        std::tuple<ThingsToBind...>&&) noexcept
         -> std::error_code;
 
     /**
-     * Executes all prepared statements provided in `sql` in a transaction.
-     * Binds each element of tuple to a parameter in statement.
+     * Prepares and executes all statements passed in `sql`.
+     * Executes callback on each row fetch.
+     * Binds parameters passed in the tuple.
+     *
+     * @note This function can bind parameters only for the first
+     * prepared statement.
      */
     template <typename... ThingsToBind>
+    requires sqlw::statement::internal::are_bindable<ThingsToBind...>
     auto operator()(
         std::string_view sql,
-        const std::tuple<ThingsToBind...>& bindables) noexcept
-        -> std::error_code;
-
-    /**
-     * Executes all prepared statements provided in `sql` in a transaction.
-     */
-    template <typename... ThingsToBind>
-    auto operator()(
-        std::string_view sql,
-        Statement::callback_type callback = nullptr) noexcept
-        -> std::error_code;
-
-    /**
-     * Executes all prepared statements provided in `sql` in a transaction.
-     * Binds each element of array to a parameter in statement.
-     * Invokes the `callback` on each execution.
-     */
-    auto operator()(
-        std::string_view sql,
-        Statement::callback_type callback,
-        std::span<const std::pair<std::string_view, sqlw::Type>> params) noexcept
-        -> std::error_code;
-
-    /**
-     * Executes all prepared statements provided in `sql` in a transaction.
-     * Binds each element of array to a parameter in statement.
-     */
-    auto operator()(
-        std::string_view sql,
-        std::span<const std::pair<std::string_view, sqlw::Type>> params) noexcept
+        Statement::callback_t,
+        std::tuple<ThingsToBind...>&&) noexcept
         -> std::error_code;
 
   private:
     sqlw::Connection* m_con{nullptr};
-
-    template <typename T>
-    auto bind(sqlw::Statement& stmt, const T& x, gsl::index& i) -> bool
-    {
-        i++;
-
-        if constexpr (
-            std::is_integral_v<std::remove_cvref_t<T>> ||
-            std::is_floating_point_v<std::remove_cvref_t<T>>)
-        {
-            stmt.bind(i, x);
-        }
-        else
-        {
-            stmt.bind(i, x.first, x.second);
-        }
-
-        return sqlw::status::Condition::OK == stmt.status();
-    }
 };
 
 template <typename... ThingsToBind>
+    requires sqlw::statement::internal::are_bindable<ThingsToBind...>
 std::error_code Transaction::operator()(
     std::string_view sql,
-    Statement::callback_type callback,
-    const std::tuple<ThingsToBind...>& bindables) noexcept
+    Statement::callback_t callback,
+    std::tuple<ThingsToBind...>&& bindables) noexcept
 {
     sqlw::Statement stmt{m_con};
-    stmt("SAVEPOINT _savepoint_");
 
-    std::error_code ec = stmt.status();
-
-    if (sqlw::status::Condition::OK != ec)
+    if (stmt("SAVEPOINT _savepoint_") != sqlw::status::Condition::OK)
     {
-        return ec;
+        return sqlw::status::Code::SAVEPOINT_ERROR;
     }
 
-    ec = stmt.prepare(sql).status();
+    const auto ec = stmt(sql, callback, std::move(bindables));
 
-    if (sqlw::status::Condition::OK != ec)
+    if (ec != sqlw::status::Condition::OK)
     {
-        stmt("ROLLBACK TO _savepoint_");
-        return ec;
+        if (stmt("ROLLBACK TO _savepoint_") != sqlw::status::Condition::OK) {
+            return sqlw::status::Code::ROLLBACK_ERROR;
+        }
+    }
+    else {
+        if (stmt("RELEASE _savepoint_") != sqlw::status::Condition::OK)
+        {
+            return sqlw::status::Code::RELEASE_ERROR;
+        }
     }
 
-    if constexpr (
-        std::tuple_size<std::remove_cvref_t<decltype(bindables)>>() > 0)
-    {
-        gsl::index i = 0;
-        std::apply(
-            [&](auto&&... bindable) { (bind(stmt, bindable, i) && ...); },
-            bindables);
-
-        ec = stmt.status();
-    }
-
-    if (sqlw::status::Condition::OK != ec)
-    {
-        stmt("ROLLBACK TO _savepoint_");
-        return ec;
-    }
-
-    stmt(callback);
-    ec = stmt.status();
-
-    if (sqlw::status::Condition::OK != ec)
-    {
-        stmt("ROLLBACK TO _savepoint_");
-        return ec;
-    }
-
-    stmt("RELEASE _savepoint_");
-
-    return stmt.status();
+    return ec;
 }
 
 template <typename... ThingsToBind>
+requires sqlw::statement::internal::are_bindable<ThingsToBind...>
 std::error_code Transaction::operator()(
     std::string_view sql,
-    const std::tuple<ThingsToBind...>& bindables) noexcept
+    std::tuple<ThingsToBind...>&& bindables) noexcept
 {
-    return operator()(sql, nullptr, bindables);
+    return operator()(sql, nullptr, std::move(bindables));
 }
 
-template <typename... ThingsToBind>
-std::error_code Transaction::operator()(
-    std::string_view sql,
-    Statement::callback_type callback) noexcept
-{
-    return operator()(sql, callback, std::tuple{});
-}
+/* template <typename... ThingsToBind> */
+/* requires sqlw::statement::internal::are_bindable<ThingsToBind...> */
+/* std::error_code Transaction::operator()( */
+/*     std::string_view sql, */
+/*     Statement::callback_t callback) noexcept */
+/* { */
+/*     return operator()(sql, callback, std::tuple{}); */
+/* } */
 
 } // namespace sqlw
 

@@ -22,6 +22,10 @@ namespace sqlw::status
     enum class Code : int
     {
         CLOSED_HANDLE = -100,
+        SAVEPOINT_ERROR,
+        ROLLBACK_ERROR,
+        RELEASE_ERROR,
+        UNUSED_PARAMETERS_ERROR,
     };
 
     enum class Condition : int
