@@ -136,14 +136,14 @@ class Statement
         callback_t callback,
         std::tuple<ThingsToBind...>&& params) -> std::error_code;
 
+    auto operator()(callback_t = nullptr, unused_params_t = {}) noexcept
+        -> std::error_code;
+
   private:
     Connection* m_connection{nullptr};
     gsl::owner<sqlite3_stmt*> m_stmt{nullptr};
     std::error_code m_status{status::Code{}};
     gsl::owner<const char*> m_unused_sql{nullptr};
-
-    auto operator()(callback_t = nullptr, unused_params_t = {}) noexcept
-        -> std::error_code;
 
     template <typename T>
     auto internal_bind(sqlw::Statement& stmt, const T& x, size_t index) -> bool;
