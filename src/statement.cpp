@@ -33,6 +33,7 @@ sqlw::Statement& sqlw::Statement::operator=(sqlw::Statement&& other) noexcept
         m_stmt = other.m_stmt;
         m_connection = other.m_connection;
         m_unused_sql = other.m_unused_sql;
+        m_sql_string = std::move(other.m_sql_string);
 
         other.m_stmt = nullptr;
         other.m_connection = nullptr;
@@ -85,6 +86,7 @@ sqlw::Statement& sqlw::Statement::exec(
 
 sqlw::Statement& sqlw::Statement::prepare(std::string_view sql) noexcept
 {
+    m_sql_string = sql;
     auto rc = sqlite3_prepare_v2(
         m_connection->handle(), sql.data(), sql.size(), &m_stmt, &m_unused_sql);
 
@@ -108,10 +110,17 @@ std::error_code sqlw::Statement::operator()(
         this->exec(callback);
         iter++;
 
-        std::string_view unused{m_unused_sql};
-
-        if (sqlw::status::Condition::DONE == m_status && !unused.empty())
+        if (sqlw::status::Condition::DONE == m_status &&
+            nullptr != m_unused_sql && !m_sql_string.empty() &&
+            m_sql_string.end() > m_unused_sql)
         {
+            std::string_view unused{m_unused_sql};
+
+            if (unused.empty())
+            {
+                break;
+            }
+
             sqlite3_finalize(m_stmt);
             this->prepare(unused);
 

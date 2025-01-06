@@ -144,6 +144,7 @@ class Statement
     gsl::owner<sqlite3_stmt*> m_stmt{nullptr};
     std::error_code m_status{status::Code{}};
     gsl::owner<const char*> m_unused_sql{nullptr};
+    std::string_view m_sql_string{};
 
     template <typename T>
     auto internal_bind(sqlw::Statement& stmt, const T& x, size_t index) -> bool;
