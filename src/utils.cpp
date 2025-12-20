@@ -1,5 +1,6 @@
 #include "sqlw/utils.hpp"
 #include <algorithm>
+#include <limits>
 
 bool sqlw::utils::is_numeric(std::string_view value) noexcept
 {
