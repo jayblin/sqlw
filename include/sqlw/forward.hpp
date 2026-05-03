@@ -26,6 +26,8 @@ enum class Code : int
     ROLLBACK_ERROR,
     RELEASE_ERROR,
     UNUSED_PARAMETERS_ERROR,
+    PARAM_CONVERT_TO_INT_ERROR,
+    PARAM_CONVERT_TO_DOUBLE_ERROR,
 };
 
 enum class Condition : int
@@ -35,6 +37,7 @@ enum class Condition : int
     DONE,
     ERROR,
     CLOSED_HANDLE,
+    INVALID_PARAM,
 };
 
 std::error_code make_error_code(sqlw::status::Code ec);
