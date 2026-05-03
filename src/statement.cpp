@@ -92,6 +92,11 @@ sqlw::Statement& sqlw::Statement::prepare(std::string_view sql) noexcept
 
     m_status = status::Code{rc};
 
+    if (sqlw::status::Condition::OK != m_status)
+    {
+        m_meta.last_ok_prepare_idx++;
+    }
+
     return *this;
 }
 
@@ -231,7 +236,7 @@ sqlw::Statement& sqlw::Statement::bind(
 
         if (ec != std::errc())
         {
-            m_status = status::Code{SQLITE_MISUSE};
+            m_status = status::Code::PARAM_CONVERT_TO_DOUBLE_ERROR;
             return *this;
         }
 
@@ -249,7 +254,7 @@ sqlw::Statement& sqlw::Statement::bind(
 
         if (fcr.ec != std::errc())
         {
-            m_status = status::Code{SQLITE_MISUSE};
+            m_status = status::Code::PARAM_CONVERT_TO_INT_ERROR;
             return *this;
         }
 
@@ -262,6 +267,11 @@ sqlw::Statement& sqlw::Statement::bind(
     }
 
     m_status = status::Code{rc};
+
+    if (sqlw::status::Condition::OK == m_status)
+    {
+        m_meta.last_ok_bind_idx = idx;
+    }
 
     return *this;
 }

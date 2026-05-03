@@ -5,6 +5,7 @@
 #include "sqlw/connection.hpp"
 #include "sqlw/forward.hpp"
 #include <concepts>
+#include <cstdint>
 #include <functional>
 #include <gsl/util>
 #include <memory>
@@ -12,7 +13,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <tuple>
+// #include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -47,6 +48,12 @@ class Statement
     typedef statement::internal::callback_t callback_t;
     typedef statement::internal::bindable_t bindable_t;
     typedef std::span<const bindable_t> unused_params_t;
+
+    struct Meta
+    {
+        uint64_t last_ok_prepare_idx{0};
+        uint64_t last_ok_bind_idx{0};
+    };
 
     Statement(Connection* connection);
 
@@ -116,10 +123,11 @@ class Statement
      * @note This function can bind parameters only for the first
      * prepared statement.
      */
-    template <typename... ThingsToBind>
-        requires statement::internal::are_bindable<ThingsToBind...>
-    auto operator()(std::string_view sql, std::tuple<ThingsToBind...>&& params)
-        -> std::error_code;
+    // template <typename... ThingsToBind>
+    //     requires statement::internal::are_bindable<ThingsToBind...>
+    // auto operator()(std::string_view sql, std::tuple<ThingsToBind...>&&
+    // params)
+    //     -> std::error_code;
 
     /**
      * Prepares and executes all statements passed in `sql`.
@@ -129,15 +137,20 @@ class Statement
      * @note This function can bind parameters only for the first
      * prepared statement.
      */
-    template <typename... ThingsToBind>
-        requires statement::internal::are_bindable<ThingsToBind...>
-    auto operator()(
-        std::string_view sql,
-        callback_t callback,
-        std::tuple<ThingsToBind...>&& params) -> std::error_code;
+    // template <typename... ThingsToBind>
+    //     requires statement::internal::are_bindable<ThingsToBind...>
+    // auto operator()(
+    //     std::string_view sql,
+    //     callback_t callback,
+    //     std::tuple<ThingsToBind...>&& params) -> std::error_code;
 
     auto operator()(callback_t = nullptr, unused_params_t = {}) noexcept
         -> std::error_code;
+
+    auto meta() const -> Meta
+    {
+        return this->m_meta;
+    }
 
   private:
     Connection* m_connection{nullptr};
@@ -145,81 +158,84 @@ class Statement
     std::error_code m_status{status::Code{}};
     gsl::owner<const char*> m_unused_sql{nullptr};
     std::string_view m_sql_string{};
+    Meta m_meta{};
 
-    template <typename T>
-    auto internal_bind(sqlw::Statement& stmt, const T& x, size_t index) -> bool;
+    // template <typename T>
+    // auto internal_bind(sqlw::Statement& stmt, const T& x, size_t index) ->
+    // bool;
 };
 
-template <typename T>
-bool Statement::internal_bind(sqlw::Statement& stmt, const T& x, size_t i)
-{
-    if constexpr (
-        std::is_integral_v<std::remove_cvref_t<T>> ||
-        std::is_floating_point_v<std::remove_cvref_t<T>>)
-    {
-        stmt.bind(i, x);
-    }
-    else
-    {
-        stmt.bind(i, x.first, x.second);
-    }
+// template <typename T>
+// bool Statement::internal_bind(sqlw::Statement& stmt, const T& x, size_t i)
+// {
+//     if constexpr (
+//         std::is_integral_v<std::remove_cvref_t<T>> ||
+//         std::is_floating_point_v<std::remove_cvref_t<T>>)
+//     {
+//         stmt.bind(i, x);
+//     }
+//     else
+//     {
+//         stmt.bind(i, x.first, x.second);
+//     }
+//
+//     return sqlw::status::Condition::OK == stmt.status();
+// }
 
-    return sqlw::status::Condition::OK == stmt.status();
-}
+// template <typename... ThingsToBind>
+//     requires statement::internal::are_bindable<ThingsToBind...>
+// auto Statement::operator()(
+//     std::string_view sql,
+//     callback_t callback,
+//     std::tuple<ThingsToBind...>&& params) -> std::error_code
+// {
+//     this->prepare(sql);
+//
+//     if (sqlw::status::Condition::OK != m_status)
+//     {
+//         return m_status;
+//     }
+//
+//     if constexpr (std::tuple_size<std::remove_cvref_t<decltype(params)>>() >
+//     0)
+//     {
+//         size_t expected_param_count = sqlite3_bind_parameter_count(m_stmt);
+//         size_t i = 1;
+//         std::apply(
+//             [&](auto&&... param) {
+//                 ((i <= expected_param_count &&
+//                   this->internal_bind(*this, param, i) && (++i)) &&
+//                  ...);
+//             },
+//             params);
+//
+//         if (i <= std::tuple_size<std::remove_cvref_t<decltype(params)>>())
+//         {
+//             m_status = sqlw::status::Code::UNUSED_PARAMETERS_ERROR;
+//         }
+//
+//         if (sqlw::status::Condition::OK != m_status)
+//         {
+//             return m_status;
+//         }
+//     }
+//
+//     if (sqlw::status::Condition::OK != m_status)
+//     {
+//         return m_status;
+//     }
+//
+//     return operator()(callback);
+// }
 
-template <typename... ThingsToBind>
-    requires statement::internal::are_bindable<ThingsToBind...>
-auto Statement::operator()(
-    std::string_view sql,
-    callback_t callback,
-    std::tuple<ThingsToBind...>&& params) -> std::error_code
-{
-    this->prepare(sql);
-
-    if (sqlw::status::Condition::OK != m_status)
-    {
-        return m_status;
-    }
-
-    if constexpr (std::tuple_size<std::remove_cvref_t<decltype(params)>>() > 0)
-    {
-        size_t expected_param_count = sqlite3_bind_parameter_count(m_stmt);
-        size_t i = 1;
-        std::apply(
-            [&](auto&&... param) {
-                ((i <= expected_param_count &&
-                  this->internal_bind(*this, param, i) && (++i)) &&
-                 ...);
-            },
-            params);
-
-        if (i <= std::tuple_size<std::remove_cvref_t<decltype(params)>>())
-        {
-            m_status = sqlw::status::Code::UNUSED_PARAMETERS_ERROR;
-        }
-
-        if (sqlw::status::Condition::OK != m_status)
-        {
-            return m_status;
-        }
-    }
-
-    if (sqlw::status::Condition::OK != m_status)
-    {
-        return m_status;
-    }
-
-    return operator()(callback);
-}
-
-template <typename... ThingsToBind>
-    requires statement::internal::are_bindable<ThingsToBind...>
-auto Statement::operator()(
-    std::string_view sql,
-    std::tuple<ThingsToBind...>&& params) -> std::error_code
-{
-    return operator()(sql, nullptr, std::move(params));
-}
+// template <typename... ThingsToBind>
+//     requires statement::internal::are_bindable<ThingsToBind...>
+// auto Statement::operator()(
+//     std::string_view sql,
+//     std::tuple<ThingsToBind...>&& params) -> std::error_code
+// {
+//     return operator()(sql, nullptr, std::move(params));
+// }
 
 } // namespace sqlw
 

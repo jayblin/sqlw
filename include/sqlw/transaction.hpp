@@ -2,11 +2,11 @@
 #define SQLW_TRANSACTION_H_
 
 #include "sqlw/connection.hpp"
-#include "sqlw/forward.hpp"
+// #include "sqlw/forward.hpp"
 #include "sqlw/statement.hpp"
 #include <span>
 #include <system_error>
-#include <tuple>
+// #include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -68,11 +68,11 @@ class Transaction
      * @note This function can bind parameters only for the first
      * prepared statement.
      */
-    template <typename... ThingsToBind>
-        requires sqlw::statement::internal::are_bindable<ThingsToBind...>
-    auto operator()(
-        std::string_view sql,
-        std::tuple<ThingsToBind...>&&) noexcept -> std::error_code;
+    // template <typename... ThingsToBind>
+    //     requires sqlw::statement::internal::are_bindable<ThingsToBind...>
+    // auto operator()(
+    //     std::string_view sql,
+    //     std::tuple<ThingsToBind...>&&) noexcept -> std::error_code;
 
     /**
      * Prepares and executes all statements passed in `sql`.
@@ -82,59 +82,75 @@ class Transaction
      * @note This function can bind parameters only for the first
      * prepared statement.
      */
-    template <typename... ThingsToBind>
-        requires sqlw::statement::internal::are_bindable<ThingsToBind...>
-    auto operator()(
-        std::string_view sql,
-        Statement::callback_t,
-        std::tuple<ThingsToBind...>&&) noexcept -> std::error_code;
+    // template <typename... ThingsToBind>
+    //     requires sqlw::statement::internal::are_bindable<ThingsToBind...>
+    // auto operator()(
+    //     std::string_view sql,
+    //     Statement::callback_t,
+    //     std::tuple<ThingsToBind...>&&) noexcept -> std::error_code;
+
+    auto target_stmt_error_message() const -> std::string_view
+    {
+        return m_target_stmt_error_message;
+    }
+
+    auto target_stmt_meta() const -> sqlw::Statement::Meta
+    {
+        return m_target_stmt_meta;
+    }
 
   private:
     sqlw::Connection* m_con{nullptr};
+    std::string m_target_stmt_error_message{};
+    sqlw::Statement::Meta m_target_stmt_meta{};
 };
 
-template <typename... ThingsToBind>
-    requires sqlw::statement::internal::are_bindable<ThingsToBind...>
-std::error_code Transaction::operator()(
-    std::string_view sql,
-    Statement::callback_t callback,
-    std::tuple<ThingsToBind...>&& bindables) noexcept
-{
-    sqlw::Statement stmt{m_con};
+// deprecate this ish because:
+// - almost not used;
+// - forces to recompilation;
+// - duplicated code.
+// template <typename... ThingsToBind>
+//     requires sqlw::statement::internal::are_bindable<ThingsToBind...>
+// std::error_code Transaction::operator()(
+//     std::string_view sql,
+//     Statement::callback_t callback,
+//     std::tuple<ThingsToBind...>&& bindables) noexcept
+// {
+//     sqlw::Statement stmt{m_con};
+//
+//     if (stmt("SAVEPOINT _savepoint_") != sqlw::status::Condition::OK)
+//     {
+//         return sqlw::status::Code::SAVEPOINT_ERROR;
+//     }
+//
+//     const auto ec = stmt(sql, callback, std::move(bindables));
+//
+//     if (ec != sqlw::status::Condition::OK)
+//     {
+//         if (stmt("ROLLBACK TO _savepoint_") != sqlw::status::Condition::OK)
+//         {
+//             return sqlw::status::Code::ROLLBACK_ERROR;
+//         }
+//     }
+//     else
+//     {
+//         if (stmt("RELEASE _savepoint_") != sqlw::status::Condition::OK)
+//         {
+//             return sqlw::status::Code::RELEASE_ERROR;
+//         }
+//     }
+//
+//     return ec;
+// }
 
-    if (stmt("SAVEPOINT _savepoint_") != sqlw::status::Condition::OK)
-    {
-        return sqlw::status::Code::SAVEPOINT_ERROR;
-    }
-
-    const auto ec = stmt(sql, callback, std::move(bindables));
-
-    if (ec != sqlw::status::Condition::OK)
-    {
-        if (stmt("ROLLBACK TO _savepoint_") != sqlw::status::Condition::OK)
-        {
-            return sqlw::status::Code::ROLLBACK_ERROR;
-        }
-    }
-    else
-    {
-        if (stmt("RELEASE _savepoint_") != sqlw::status::Condition::OK)
-        {
-            return sqlw::status::Code::RELEASE_ERROR;
-        }
-    }
-
-    return ec;
-}
-
-template <typename... ThingsToBind>
-    requires sqlw::statement::internal::are_bindable<ThingsToBind...>
-std::error_code Transaction::operator()(
-    std::string_view sql,
-    std::tuple<ThingsToBind...>&& bindables) noexcept
-{
-    return operator()(sql, nullptr, std::move(bindables));
-}
+// template <typename... ThingsToBind>
+//     requires sqlw::statement::internal::are_bindable<ThingsToBind...>
+// std::error_code Transaction::operator()(
+//     std::string_view sql,
+//     std::tuple<ThingsToBind...>&& bindables) noexcept
+// {
+//     return operator()(sql, nullptr, std::move(bindables));
+// }
 
 /* template <typename... ThingsToBind> */
 /* requires sqlw::statement::internal::are_bindable<ThingsToBind...> */

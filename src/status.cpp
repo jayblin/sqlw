@@ -29,7 +29,10 @@ struct ErrorCategory : std::error_category
             return "error on savepoint RELEASE";
         case Code::UNUSED_PARAMETERS_ERROR:
             return "some paramaters where not bound";
-            break;
+        case Code::PARAM_CONVERT_TO_INT_ERROR:
+            return "not possible to convert provided parameter to an integer";
+        case Code::PARAM_CONVERT_TO_DOUBLE_ERROR:
+            return "not possible to convert provided parameter to a double";
         }
 
         return sqlite3_errstr(ec);
@@ -58,6 +61,8 @@ struct ConditionCategory : std::error_category
             return "error while performing an operation";
         case C::CLOSED_HANDLE:
             return "object's handle is closed";
+        case Condition::INVALID_PARAM:
+            return "bound parameter is invalid";
         }
 
         return "(unknown condition)";
@@ -87,6 +92,9 @@ struct ConditionCategory : std::error_category
             return ec.value() == SQLITE_ROW;
         case Condition::CLOSED_HANDLE:
             return ec == Code::CLOSED_HANDLE;
+        case Condition::INVALID_PARAM:
+            return ec == Code::PARAM_CONVERT_TO_DOUBLE_ERROR ||
+                   ec == Code::PARAM_CONVERT_TO_INT_ERROR;
         default:
             return false;
         }
