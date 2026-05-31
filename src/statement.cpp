@@ -196,7 +196,7 @@ std::error_code sqlw::Statement::operator()(
     sqlw::Statement::callback_t callback,
     std::span<const sqlw::Statement::bindable_t> params)
 {
-    prepare(sql);
+    this->prepare(sql);
 
     if (sqlw::status::Condition::OK != m_status)
     {

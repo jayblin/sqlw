@@ -39,13 +39,11 @@ std::error_code sqlw::Transaction::operator()(
             return sqlw::status::Code::ROLLBACK_ERROR;
         }
     }
-    else
+
+    if (sqlw::Statement{m_con}("RELEASE _savepoint_") !=
+        sqlw::status::Condition::OK)
     {
-        if (sqlw::Statement{m_con}("RELEASE _savepoint_") !=
-            sqlw::status::Condition::OK)
-        {
-            return sqlw::status::Code::RELEASE_ERROR;
-        }
+        return sqlw::status::Code::RELEASE_ERROR;
     }
 
     return ec;
